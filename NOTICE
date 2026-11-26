@@ -1,0 +1,20 @@
+Inverse Fusion Calculator
+=========================
+
+This project is an independent, from-scratch reimplementation. It vendors
+reference data and algorithm files from the open-source project
+"persona5_calculator" by chinhodado.
+
+  Project:  persona5_calculator
+  Upstream: https://github.com/chinhodado/persona5_calculator
+  License:  Apache License, Version 2.0
+  Commit:   802422dad1f5b9eee441e594e738aceaeb9e5a85
+
+The files under vendor/reference/ are unmodified copies downloaded from the
+upstream repository at the pinned commit above, and are redistributed under
+the terms of the Apache License, Version 2.0. A copy of that license is
+included at vendor/reference/LICENSE.
+
+Persona 5 and related names and assets are trademarks of their respective
+owners. This project is unofficial and is not affiliated with or endorsed by
+ATLUS or SEGA.
