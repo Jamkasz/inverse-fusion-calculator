@@ -704,6 +704,7 @@ Conditions most likely to bite a real user; each is pinned by a test in the task
 - Skill and trait descriptions are the reference's `effect` text, verbatim. Skill card sources shown are normal electric chair, alarm electric chair and negotiation; battle drops are not shown (no data).
 - Hosting is GitHub Pages on the default address; the site is deployed from Task 1 and every task is a vertical slice.
 - Network Fusion skills are supported through the `held` source: the user names the persona that already has the skill and the planner routes it from there.
+- Project code is licensed Apache-2.0 (Copyright 2026 Jamkasz), matching the vendored reference; NOTICE carries the upstream attribution.
 
 ## Future: a second game (not part of this plan)
 

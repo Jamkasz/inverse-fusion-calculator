@@ -2,6 +2,8 @@
   "name": "inverse-fusion-calculator",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
+  "author": "Jamkasz",
   "type": "module",
   "engines": {
     "node": "^22.13.0 || ^24.0.0 || >=26.0.0"

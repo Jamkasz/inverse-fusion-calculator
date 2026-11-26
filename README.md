@@ -53,6 +53,18 @@ for the full attribution.
 - Upstream repository: <https://github.com/chinhodado/persona5_calculator>
 - Pinned commit: <https://github.com/chinhodado/persona5_calculator/commit/802422dad1f5b9eee441e594e738aceaeb9e5a85>
 
+## License
+
+The project code is licensed under the Apache License, Version 2.0
+(Copyright 2026 Jamkasz); the full license text is in [`LICENSE`](./LICENSE).
+
+Files under `vendor/reference/` remain unmodified Apache-2.0 copies of the
+upstream reference calculator and are attributed in [`NOTICE`](./NOTICE).
+
+This project is unofficial and is not affiliated with or endorsed by ATLUS or
+SEGA. The deployed site also serves the license at `LICENSE` and the
+attribution at `NOTICE`.
+
 ## Deploy (manual steps for the product owner)
 
 These steps are intentionally **manual** and are not performed by the build. The

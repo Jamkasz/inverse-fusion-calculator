@@ -23,7 +23,15 @@ export default function App() {
             <code>{SHORT_COMMIT}</code>
           </a>{' '}
           (<code>{PINNED_COMMIT}</code>). Game data is vendored from that
-          repository and used under the Apache License 2.0; see NOTICE.
+          repository and used under the{' '}
+          <a href="./LICENSE" target="_blank" rel="noreferrer">
+            Apache License 2.0
+          </a>
+          ; see{' '}
+          <a href="./NOTICE" target="_blank" rel="noreferrer">
+            NOTICE
+          </a>
+          .
         </p>
       </footer>
     </main>

@@ -105,6 +105,12 @@ describe('App', () => {
       'href',
       'https://chinhodado.github.io/persona5_calculator/indexRoyal.html',
     )
+
+    const licenseLink = screen.getByRole('link', { name: 'Apache License 2.0' })
+    expect(licenseLink).toHaveAttribute('href', './LICENSE')
+
+    const noticeLink = screen.getByRole('link', { name: 'NOTICE' })
+    expect(noticeLink).toHaveAttribute('href', './NOTICE')
   })
 
   it('links to the pinned upstream commit and shows its short SHA', () => {
