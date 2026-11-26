@@ -277,7 +277,7 @@ Rules for every task:
 
 **Tests:** every expected vendored file exists and is non-empty; `PINNED_SHA` is a 40-character hex string; `PersonaDataRoyal.js` contains `personaMapRoyal`; `App` renders the title and a link to the reference calculator.
 
-### - [ ] Task 2: Pick a persona, see its skills and trait
+### - [x] Task 2: Pick a persona, see its skills and trait
 
 **Visible result:** the visitor types a persona name and sees its arcana, base level, every skill it learns (labelled `base` or `Lv N`, with element, cost and description) and its trait with description.
 
@@ -297,6 +297,8 @@ Rules for every task:
 - a skill whose reference `card` is `"Network Fusion"` has `acquisitionNote === "Network Fusion"` and that note alone does not make `hasCard` true.
 - `formatCost` returns `"8 SP"` for `Abysmal Surge` (cost 800) and `"-"` for a passive.
 - with no DLC owned, no `cardSources` list names a DLC persona.
+
+> **Data correction (verified):** the pinned `skillMapRoyal` has 525 entries — 435 skills + 90 traits (the plan's 459/369 figures were a miscount). 27 keys of `persona.skills` are treasure-demon extra-trait names (the 9 rare personas each list three), so the "every persona skill exists" check uses `skills ∪ traits`.
 
 **Tests (UI):** choosing `Agathion` shows 6 skills (Dia, Baisudi, Lunge, Rakukaja, Zio, Dodge Elec) in learn-level order, `Zio` labelled `Lv 7`, `Dia` labelled `base`, each with its `effect` text exactly as in `game-data.json`; the trait shows `Rare Antibody` and its effect text; an unknown name shows "No such persona".
 

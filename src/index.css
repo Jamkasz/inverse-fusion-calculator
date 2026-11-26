@@ -72,3 +72,125 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.9em;
 }
+
+.target-picker {
+  margin-bottom: 2.5rem;
+}
+
+.target-picker label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+.target-picker input {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  border: 1px solid rgba(128, 128, 128, 0.55);
+  border-radius: 0.4rem;
+}
+
+.target-picker input:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.field-error {
+  margin: 0.5rem 0 0;
+  color: #b3261e;
+  font-weight: 600;
+}
+
+.persona-summary h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.6rem;
+}
+
+.persona-meta {
+  display: flex;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+  opacity: 0.85;
+}
+
+.persona-arcana::after {
+  content: ' ·';
+}
+
+.skill-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skill-row {
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 0.5rem;
+}
+
+.skill-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.skill-name {
+  font-weight: 600;
+}
+
+.skill-level,
+.skill-element,
+.skill-cost {
+  font-size: 0.8rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background-color: rgba(128, 128, 128, 0.18);
+  text-transform: capitalize;
+}
+
+.skill-effect {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.persona-trait {
+  margin-top: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(128, 128, 128, 0.35);
+}
+
+.persona-trait h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+.persona-trait p {
+  margin: 0;
+}
+
+.trait-name {
+  font-weight: 600;
+}
+
+.trait-effect {
+  opacity: 0.9;
+}
+
+@media (prefers-color-scheme: dark) {
+  .field-error {
+    color: #ff8a80;
+  }
+
+  .target-picker input:focus-visible {
+    outline-color: #ff9a9a;
+  }
+}

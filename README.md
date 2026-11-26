@@ -24,23 +24,28 @@ npm test         # run the Vitest suite once
 npm run build    # type-check, then build the static site into dist/
 npm run preview  # serve the production build locally
 npm run fetch    # re-download the pinned reference files into vendor/reference/
+npm run data     # re-fetch the reference files, then regenerate src/data/game-data.json
 ```
 
 ### Refreshing vendored data
 
-The files under `vendor/reference/` are unmodified copies of upstream files at the
-pinned commit. They are committed to this repository so builds and tests are
-reproducible and offline. To refresh them (for example after changing the pin):
+All files under `vendor/reference/` except `PINNED_SHA` (written by the fetch
+script) are unmodified copies of upstream files at the pinned commit. They are
+committed to this repository so builds and tests are reproducible and offline.
+To refresh them (for example after changing the pin):
 
 ```bash
-npm run fetch
+npm run data
 ```
 
-The script downloads all reference files and writes the commit hash to
+`npm run data` fetches the reference files and then rebuilds the typed
+`src/data/game-data.json` from them.
+
+The fetch step downloads all reference files and writes the commit hash to
 `vendor/reference/PINNED_SHA`. It exits non-zero if any download fails or is
 empty. To move to a new upstream version, update `SHA` in
 `tools/fetch-reference.mjs`, update `PINNED_COMMIT` in `src/ui/App.tsx` and the
-pin in `NOTICE`, then run `npm run fetch`, `npm test` and `npm run build`.
+pin in `NOTICE`, then run `npm run data`, `npm test` and `npm run build`.
 
 ## Attribution
 
