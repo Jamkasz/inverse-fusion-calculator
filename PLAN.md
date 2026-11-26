@@ -306,7 +306,7 @@ Rules for every task:
 
 ## Phase 2 — Forward fusion (must match the reference exactly)
 
-### - [ ] Task 3: Fuse two personas
+### - [x] Task 3: Fuse two personas
 
 **Visible result:** a collapsible "Fusion check" panel: pick two personas, see the resulting persona (or "These cannot be fused").
 

@@ -4,6 +4,7 @@ import { loadGameData } from '../data/load'
 import type { Persona } from '../data/types'
 import TargetPicker from './TargetPicker'
 import PersonaSummary from './PersonaSummary'
+import FusionCheck from './FusionCheck'
 
 export const PINNED_COMMIT = '802422dad1f5b9eee441e594e738aceaeb9e5a85'
 export const SHORT_COMMIT = PINNED_COMMIT.slice(0, 7)
@@ -28,6 +29,8 @@ export default function App() {
       {selectedPersona ? (
         <PersonaSummary persona={selectedPersona} data={gameData} />
       ) : null}
+
+      <FusionCheck data={gameData} />
 
       <footer>
         <p>

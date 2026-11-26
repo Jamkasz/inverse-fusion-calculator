@@ -194,3 +194,99 @@ body {
     outline-color: #ff9a9a;
   }
 }
+
+.fusion-check {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(128, 128, 128, 0.35);
+}
+
+.fusion-check-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.fusion-check-toggle {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.fusion-check-toggle::before {
+  content: '▸';
+  display: inline-block;
+  width: 1.1em;
+}
+
+.fusion-check-toggle[aria-expanded='true']::before {
+  content: '▾';
+}
+
+.fusion-check-toggle:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.fusion-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.fusion-picker {
+  flex: 1 1 14rem;
+}
+
+.fusion-picker label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+.fusion-picker input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  border: 1px solid rgba(128, 128, 128, 0.55);
+  border-radius: 0.4rem;
+}
+
+.fusion-picker input:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.fusion-result {
+  margin-top: 1rem;
+}
+
+.fusion-result p {
+  margin: 0.25rem 0;
+}
+
+.fusion-result-name {
+  font-size: 1.15rem;
+}
+
+.fusion-result-none {
+  font-weight: 600;
+}
+
+.fusion-note {
+  font-size: 0.9rem;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+@media (prefers-color-scheme: dark) {
+  .fusion-check-toggle:focus-visible,
+  .fusion-picker input:focus-visible {
+    outline-color: #ff9a9a;
+  }
+}
