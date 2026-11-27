@@ -335,7 +335,7 @@ Rules for every task:
 
 **Tests:** for both DLC configurations, with `allowRare: true`, our `fuse` equals the golden value for every pair. This test is the definition of "accurate to the source of truth"; it must stay green forever. If it fails, fix `fusion.ts`, never the golden file.
 
-### - [ ] Task 5: See every way to fuse the chosen persona
+### - [x] Task 5: See every way to fuse the chosen persona
 
 **Visible result:** under the persona summary, "Ways to fuse <persona>: N recipes", listing the 20 cheapest (ingredients and approximate cost) with a "show all" toggle; advanced-fusion personas show their single multi-ingredient recipe; treasure demons show "Cannot be fused".
 

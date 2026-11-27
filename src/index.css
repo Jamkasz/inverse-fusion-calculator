@@ -290,3 +290,75 @@ body {
     outline-color: #ff9a9a;
   }
 }
+
+.recipe-list {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(128, 128, 128, 0.35);
+}
+
+.recipe-list h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.recipe-list-empty {
+  margin: 0;
+  font-weight: 600;
+}
+
+.recipe-rows {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding-left: 1.4rem;
+}
+
+.recipe-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 0.4rem;
+}
+
+.recipe-ingredients {
+  font-weight: 600;
+}
+
+.recipe-cost {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.recipe-toggle {
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  border: 1px solid rgba(128, 128, 128, 0.55);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.recipe-toggle:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.recipe-list-note {
+  margin: 0.9rem 0 0;
+  font-size: 0.875rem;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+@media (prefers-color-scheme: dark) {
+  .recipe-toggle:focus-visible {
+    outline-color: #ff9a9a;
+  }
+}
