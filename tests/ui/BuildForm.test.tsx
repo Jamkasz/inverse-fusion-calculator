@@ -123,7 +123,7 @@ describe('BuildForm', () => {
   it('removes innate and offers persona sources for an inherited skill', () => {
     render(<App />)
     choosePersona('Agathion')
-    changeSkill(1, 'Agi')
+    changeSkill(1, 'Absorb Bless')
 
     const row = rows()[0]
     const select = within(row).getByTestId('skill-source') as HTMLSelectElement
@@ -134,16 +134,16 @@ describe('BuildForm', () => {
 
     expect(optionValues).not.toContain('innate')
     expect(optionLabels).not.toContain('Innate')
-    expect(optionLabels).toContain('Cait Sith (base)')
-    expect(optionLabels).toContain('Succubus (Lv 8)')
+    expect(optionLabels).toContain('Cybele (Lv 87)')
+    expect(optionLabels).toContain('Vohu Manah (Lv 82)')
 
-    const first = sourceOptions(data, 'Agathion', 'Agi')[0]
+    const first = sourceOptions(data, 'Agathion', 'Absorb Bless')[0]
     expect(first.kind).toBe('persona')
     expect(select.value).toBe(
       first.kind === 'persona' ? `persona:${first.persona}` : '',
     )
     expect(
-      within(row).getByRole('option', { name: /Cait Sith/ }),
+      within(row).getByRole('option', { name: /Cybele/ }),
     ).toBeInTheDocument()
   })
 
@@ -162,11 +162,116 @@ describe('BuildForm', () => {
   it('explains an element the target cannot inherit', () => {
     render(<App />)
     choosePersona('Agathion')
-    changeSkill(1, 'Garu')
+    changeSkill(1, 'Vacuum Wave')
 
     expect(rows()[0]).toBeDefined()
     expect(screen.getByTestId('source-reason')).toHaveTextContent(
       'Agathion cannot inherit Wind skills',
+    )
+  })
+
+  it('offers Skill card for Zio and lists the normal electric chair source', () => {
+    render(<App />)
+    choosePersona('Agathion')
+
+    const row = rows()[4]
+    const select = within(row).getByLabelText(
+      'Source for Zio',
+    ) as HTMLSelectElement
+    expect(
+      Array.from(select.options).map((option) => option.textContent),
+    ).toContain('Skill card')
+
+    fireEvent.change(select, { target: { value: 'card' } })
+
+    const list = within(row).getByTestId('card-source-list')
+    expect(within(list).getByText('Electric chair: Agathion')).toBeInTheDocument()
+    expect(
+      within(list).getAllByTestId('card-source-group'),
+    ).toHaveLength(1)
+
+    fireEvent.change(select, { target: { value: 'innate' } })
+
+    expect(within(row).queryByTestId('card-source-list')).not.toBeInTheDocument()
+  })
+
+  it('defaults Mazio to the card and shows only the alarm chair source', () => {
+    render(<App />)
+    choosePersona('Agathion')
+    changeSkill(1, 'Mazio')
+
+    const row = rows()[0]
+    expect(within(row).getByTestId('skill-source')).toHaveValue('card')
+    const list = within(row).getByTestId('card-source-list')
+    expect(
+      within(list).getByText('Electric chair during fusion alarm: Agathion'),
+    ).toBeInTheDocument()
+    expect(
+      within(list).queryByText('Electric chair: Agathion'),
+    ).not.toBeInTheDocument()
+    expect(within(list).getAllByTestId('card-source-group')).toHaveLength(1)
+  })
+
+  it('defaults Brain Buster to the card and shows only its negotiation source', () => {
+    render(<App />)
+    choosePersona('Agathion')
+    changeSkill(1, 'Brain Buster')
+
+    const row = rows()[0]
+    expect(within(row).getByTestId('skill-source')).toHaveValue('card')
+    const list = within(row).getByTestId('card-source-list')
+    expect(
+      within(list).getByText('Negotiation: Monk of the Valley (Kurama Tengu)'),
+    ).toBeInTheDocument()
+    expect(within(list).queryByText(/Electric chair/)).not.toBeInTheDocument()
+    expect(within(list).getAllByTestId('card-source-group')).toHaveLength(1)
+  })
+
+  it('shows both alarm and negotiation groups for Abysmal Surge', () => {
+    render(<App />)
+    choosePersona('Agathion')
+    changeSkill(1, 'Abysmal Surge')
+
+    const row = rows()[0]
+    expect(within(row).getByTestId('skill-source')).toHaveValue('card')
+    const list = within(row).getByTestId('card-source-list')
+    expect(
+      within(list).getByText('Electric chair during fusion alarm: Loa'),
+    ).toBeInTheDocument()
+    expect(
+      within(list).getByText('Negotiation: Awakened God (Arahabaki)'),
+    ).toBeInTheDocument()
+    expect(within(list).queryByText('Electric chair: Loa')).not.toBeInTheDocument()
+    expect(within(list).getAllByTestId('card-source-group')).toHaveLength(2)
+  })
+
+  it('shows the reference acquisition note even when there is no source', () => {
+    render(<App />)
+    choosePersona('Agathion')
+    changeSkill(1, 'Almighty Amp')
+
+    const row = rows()[0]
+    expect(within(row).getByTestId('source-reason')).toHaveTextContent(
+      'No persona learns this skill',
+    )
+    expect(within(row).queryByTestId('skill-source')).not.toBeInTheDocument()
+    expect(within(row).getByTestId('acquisition-note')).toHaveTextContent(
+      'Reference notes: Network Fusion',
+    )
+  })
+
+  it('shows a Fusion Mutation reference note too', () => {
+    render(<App />)
+    choosePersona('Agathion')
+    changeSkill(1, 'Attract')
+
+    const row = rows()[0]
+    expect(within(row).getByTestId('source-reason')).toHaveTextContent(
+      'No persona learns this skill',
+    )
+    expect(within(row).queryByTestId('skill-source')).not.toBeInTheDocument()
+    expect(within(row).getByTestId('acquisition-note')).toHaveTextContent(
+      'Reference notes: Fusion Mutation',
     )
   })
 
@@ -251,13 +356,13 @@ describe('BuildForm', () => {
       expect(onChange).toHaveBeenLastCalledWith(expected)
     })
 
-    changeSkill(1, 'Agi')
+    changeSkill(1, 'Absorb Bless')
 
-    const firstSource = sourceOptions(data, 'Agathion', 'Agi')[0]
+    const firstSource = sourceOptions(data, 'Agathion', 'Absorb Bless')[0]
     const expectedAfterEdit: Build = {
       target: 'Agathion',
       skills: [
-        { name: 'Agi', source: firstSource },
+        { name: 'Absorb Bless', source: firstSource },
         ...nativeNames.slice(1).map((name) => ({
           name,
           source: { kind: 'innate' as const },

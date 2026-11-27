@@ -2,6 +2,7 @@ import type { GameData, Persona } from '../data/types'
 import { formatCost } from '../data/load'
 import { sourceOptions, sourceUnavailableReason } from '../engine/build'
 import type { SkillSource } from '../engine/build'
+import CardSourceList from './CardSourceList'
 
 export type MovesetRow = {
   id: number
@@ -147,6 +148,18 @@ export default function SkillRow({
           Remove
         </button>
       </div>
+
+      {skill && row.source.kind === 'card' ? (
+        <CardSourceList skill={skill} />
+      ) : null}
+
+      {skill &&
+      (skill.acquisitionNote === 'Network Fusion' ||
+        skill.acquisitionNote === 'Fusion Mutation') ? (
+        <p className="acquisition-note" data-testid="acquisition-note">
+          Reference notes: {skill.acquisitionNote}
+        </p>
+      ) : null}
     </li>
   )
 }

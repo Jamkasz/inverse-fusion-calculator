@@ -411,7 +411,7 @@ sourceOptions(data, target: string, skill: string): SkillSource[]
 
 **Tests (UI):** choosing `Agathion` prefills 6 rows all `innate`; a persona that learns more than 8 skills prefills 8 and shows the rest as chips; changing the target replaces the rows; replacing a row's skill with one the target does not learn removes `innate` from its options; a unique skill of another persona shows the reason text; adding a 9th row is impossible; `onChange` receives the expected `Build`.
 
-### - [ ] Task 7: Skill cards as a source
+### - [x] Task 7: Skill cards as a source
 
 **Visible result:** rows can be set to "Skill card" when a card exists, and the row then lists where to get the card: normal electric chair, electric chair during a fusion alarm, negotiation.
 

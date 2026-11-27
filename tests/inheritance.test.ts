@@ -96,24 +96,55 @@ describe('inheritCapacity', () => {
 })
 
 describe('sourceOptions', () => {
-  it('lists innate first for a skill the target learns', () => {
-    const options = sourceOptions(data, 'Agathion', 'Zio')
-    expect(options[0]).toEqual({ kind: 'innate' })
-    expect(options).not.toContainEqual({ kind: 'persona', persona: 'Agathion' })
-    for (const option of options) {
-      expect(['innate', 'persona']).toContain(option.kind)
-    }
+  it('lists innate first, then the card, then persona sources', () => {
+    expect(sourceOptions(data, 'Agathion', 'Zio')).toEqual([
+      { kind: 'innate' },
+      { kind: 'card' },
+      { kind: 'persona', persona: 'Pixie' },
+    ])
   })
 
-  it('lists only non-target personas that learn the skill', () => {
+  it('offers a card before the persona that teaches it', () => {
     expect(sourceOptions(data, 'Agathion', 'Kouha')).toEqual([
+      { kind: 'card' },
       { kind: 'persona', persona: 'Angel' },
     ])
   })
 
-  it('is empty when the target cannot inherit the skill', () => {
-    expect(sourceOptions(data, 'Jack Frost', 'Agi')).toEqual([])
+  it('lists only non-target personas when there is no card', () => {
+    expect(sourceOptions(data, 'Agathion', 'Absorb Bless')).toEqual([
+      { kind: 'persona', persona: 'Cybele' },
+      { kind: 'persona', persona: 'Vohu Manah' },
+    ])
+  })
+
+  it('offers a card even when the target cannot inherit the element', () => {
+    expect(sourceOptions(data, 'Jack Frost', 'Agi')).toEqual([{ kind: 'card' }])
+    expect(sourceOptions(data, 'Abaddon', 'Brain Buster')).toEqual([
+      { kind: 'card' },
+    ])
+    expect(sourceOptions(data, 'Agathion', 'Garu')).toEqual([{ kind: 'card' }])
+  })
+
+  it('is empty when there is neither a card nor an inheritance route', () => {
+    expect(sourceOptions(data, 'Agathion', 'Vacuum Wave')).toEqual([])
     expect(sourceOptions(data, 'Agathion', 'Hassou Tobi')).toEqual([])
+  })
+
+  it('never offers a card for a unique skill, even if it has a card source', () => {
+    const cloned: GameData = {
+      ...data,
+      skills: data.skills.map((skill) =>
+        skill.name === 'Hassou Tobi'
+          ? {
+              ...skill,
+              cardSources: { ...skill.cardSources, chair: ['Agathion'] },
+            }
+          : skill,
+      ),
+    }
+
+    expect(sourceOptions(cloned, 'Agathion', 'Hassou Tobi')).toEqual([])
   })
 })
 
@@ -122,15 +153,20 @@ describe('sourceUnavailableReason', () => {
     expect(sourceUnavailableReason(data, 'Agathion', 'Hassou Tobi')).toBe(
       'unique to Yoshitsune',
     )
-    expect(sourceUnavailableReason(data, 'Jack Frost', 'Agi')).toBe(
-      'Jack Frost cannot inherit Fire skills',
-    )
-    expect(sourceUnavailableReason(data, 'Agathion', 'Garu')).toBe(
+    expect(sourceUnavailableReason(data, 'Agathion', 'Vacuum Wave')).toBe(
       'Agathion cannot inherit Wind skills',
+    )
+    expect(sourceUnavailableReason(data, 'Jack Frost', 'Blazing Hell')).toBe(
+      'Jack Frost cannot inherit Fire skills',
     )
     expect(sourceUnavailableReason(data, 'Agathion', 'Definitely Not A Skill')).toBe(
       'Unknown skill',
     )
     expect(sourceUnavailableReason(data, 'Agathion', 'Zio')).toBeNull()
+  })
+
+  it('has no reason when a card exists despite the inheritance type', () => {
+    expect(sourceUnavailableReason(data, 'Jack Frost', 'Agi')).toBeNull()
+    expect(sourceUnavailableReason(data, 'Agathion', 'Garu')).toBeNull()
   })
 })

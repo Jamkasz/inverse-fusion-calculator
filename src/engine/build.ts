@@ -1,4 +1,4 @@
-import type { GameData } from '../data/types'
+import type { GameData, Skill } from '../data/types'
 import { canInherit } from './inheritance'
 import { isSkillInheritable } from './rules'
 
@@ -15,10 +15,21 @@ export type Build = {
 }
 
 /**
+ * Whether any of the reference card lists has an entry. Kept private so the
+ * engine does not depend on the JSON loader; the loader filters the same lists
+ * for unowned DLC.
+ */
+function hasCardSource(skill: Skill): boolean {
+  const { chair, chairAlarm, negotiation } = skill.cardSources
+  return chair.length > 0 || chairAlarm.length > 0 || negotiation.length > 0
+}
+
+/**
  * The valid sources for one skill of a target: innate first when the target
- * learns it, then one persona source per other persona that learns it natively.
- * Persona sources only exist when the target can inherit the skill at all.
- * Cards and held sources are added by later tasks.
+ * learns it, then a skill card if one exists, then one persona source per other
+ * persona that learns it natively. Cards ignore the inheritance type, so they
+ * appear even when no persona source does. Persona sources only exist when the
+ * target can inherit the skill at all. Held sources are added by Task 8.
  */
 export function sourceOptions(
   data: GameData,
@@ -31,6 +42,10 @@ export function sourceOptions(
 
   const options: SkillSource[] = []
   if (skill in targetEntry.skills) options.push({ kind: 'innate' })
+
+  if (isSkillInheritable(skillEntry) && hasCardSource(skillEntry)) {
+    options.push({ kind: 'card' })
+  }
 
   if (canInherit(data, target, skill)) {
     for (const persona of data.personas) {
