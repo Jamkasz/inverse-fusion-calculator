@@ -362,3 +362,142 @@ body {
     outline-color: #ff9a9a;
   }
 }
+
+.build-form {
+  margin-top: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(128, 128, 128, 0.35);
+}
+
+.build-form-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.skill-input {
+  flex: 1 1 12rem;
+  min-width: 8rem;
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  border: 1px solid rgba(128, 128, 128, 0.55);
+  border-radius: 0.4rem;
+}
+
+.skill-input:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.skill-source-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.55rem;
+}
+
+.skill-source {
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  border: 1px solid rgba(128, 128, 128, 0.55);
+  border-radius: 0.4rem;
+}
+
+.skill-source:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.skill-remove {
+  padding: 0.25rem 0.6rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: inherit;
+  background-color: transparent;
+  border: 1px solid rgba(128, 128, 128, 0.55);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.skill-remove:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.add-skill {
+  margin-top: 0.85rem;
+  padding: 0.35rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  border: 1px solid rgba(128, 128, 128, 0.55);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.add-skill:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.add-skill:disabled,
+.also-learns-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.also-learns {
+  margin-top: 0.85rem;
+}
+
+.also-learns-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+.also-learns-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.also-learns-chip {
+  padding: 0.2rem 0.6rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: inherit;
+  background-color: rgba(128, 128, 128, 0.18);
+  border: 1px solid rgba(128, 128, 128, 0.45);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.also-learns-chip:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.source-reason {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #b3261e;
+}
+
+@media (prefers-color-scheme: dark) {
+  .skill-input:focus-visible,
+  .skill-source:focus-visible,
+  .skill-remove:focus-visible,
+  .add-skill:focus-visible,
+  .also-learns-chip:focus-visible {
+    outline-color: #ff9a9a;
+  }
+
+  .source-reason {
+    color: #ff8a80;
+  }
+}

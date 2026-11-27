@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import App from '../../src/ui/App'
 import rawGameData from '../../src/data/game-data.json'
@@ -18,23 +18,13 @@ function typePersona(value: string) {
 }
 
 describe('PersonaSummary', () => {
-  it('lists Agathion’s skills in learn order with costs, effects and trait', () => {
+  it('shows the header, arcana, base level and trait', () => {
     render(<App />)
     typePersona('Agathion')
 
-    const rows = screen.getAllByTestId('skill-row')
-    expect(rows).toHaveLength(6)
-
-    const expectedOrder = ['Dia', 'Baisudi', 'Lunge', 'Rakukaja', 'Zio', 'Dodge Elec']
-    expectedOrder.forEach((name, index) => {
-      const row = rows[index]
-      expect(within(row).getByTestId('skill-name')).toHaveTextContent(name)
-      expect(within(row).getByText(effectOf(name))).toBeInTheDocument()
-    })
-
-    expect(within(rows[0]).getByTestId('skill-level')).toHaveTextContent('base')
-    expect(within(rows[4]).getByTestId('skill-level')).toHaveTextContent('Lv 7')
-
+    expect(screen.getByRole('heading', { name: 'Agathion' })).toBeInTheDocument()
+    expect(screen.getByText('Chariot')).toBeInTheDocument()
+    expect(screen.getByText('Base level 3')).toBeInTheDocument()
     expect(screen.getByTestId('trait-name')).toHaveTextContent('Rare Antibody')
     expect(screen.getByTestId('trait-effect')).toHaveTextContent(
       effectOf('Rare Antibody'),
@@ -55,25 +45,32 @@ describe('PersonaSummary', () => {
 
     expect(screen.queryByText('No such persona')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Agathion' })).toBeInTheDocument()
-    expect(screen.getAllByTestId('skill-row')).toHaveLength(6)
   })
 
-  it('renders treasure-demon extra-trait rows with their trait effects', () => {
+  it('keeps a treasure demon’s own trait but only lists real skills as moves', () => {
     render(<App />)
     typePersona('Crystal Skull')
 
-    const rows = screen.getAllByTestId('skill-row')
-    expect(rows).toHaveLength(11)
-
-    const foulStench = rows.find(
-      (row) => within(row).getByTestId('skill-name').textContent === 'Foul Stench',
-    )
-    expect(foulStench).toBeDefined()
-    if (foulStench) {
-      expect(within(foulStench).getByText(effectOf('Foul Stench'))).toBeInTheDocument()
-      expect(within(foulStench).getByText('trait')).toBeInTheDocument()
-    }
-
     expect(screen.getByTestId('trait-name')).toHaveTextContent('Ultimate Vessel')
+    expect(screen.getByTestId('trait-effect')).toHaveTextContent(
+      effectOf('Ultimate Vessel'),
+    )
+
+    expect(screen.getAllByTestId('skill-row')).toHaveLength(8)
+    const values = (
+      screen.getAllByLabelText(/^Skill \d+$/) as HTMLInputElement[]
+    ).map((input) => input.value)
+
+    expect(values).toContain('Maragidyne')
+    expect(values).not.toContain('Foul Stench')
+    expect(values).not.toContain('Ailment Hunter')
+    expect(values).not.toContain('Cursed Bloodline')
+
+    // The three extra trait names are not moveset skills at all, so they must
+    // not appear as "also learns" chips and there is no extras section.
+    for (const name of ['Foul Stench', 'Ailment Hunter', 'Cursed Bloodline']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
+    }
+    expect(screen.queryByText('Also learns')).not.toBeInTheDocument()
   })
 })

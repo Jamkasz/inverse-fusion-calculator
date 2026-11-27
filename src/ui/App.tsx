@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { DEFAULT_SETTINGS } from '../settings'
 import { loadGameData } from '../data/load'
 import type { Persona } from '../data/types'
+import type { Build } from '../engine/build'
 import { createFusion } from '../engine/fusion'
 import { buildRecipeIndex } from '../engine/recipes'
 import TargetPicker from './TargetPicker'
 import PersonaSummary from './PersonaSummary'
+import BuildForm from './BuildForm'
 import RecipeList from './RecipeList'
 import FusionCheck from './FusionCheck'
 
@@ -19,6 +21,7 @@ const gameData = loadGameData(DEFAULT_SETTINGS)
 
 export default function App() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null)
+  const [, setBuild] = useState<Build | null>(null)
 
   // Memoized on the module-level game data; Task 17 will add the editable
   // settings to the dependencies.
@@ -45,8 +48,14 @@ export default function App() {
       {selectedPersona ? (
         <>
           <PersonaSummary persona={selectedPersona} data={gameData} />
-          <RecipeList
+          <BuildForm
             key={selectedPersona.name}
+            persona={selectedPersona}
+            data={gameData}
+            onChange={setBuild}
+          />
+          <RecipeList
+            key={`recipes-${selectedPersona.name}`}
             persona={selectedPersona}
             recipes={recipeIndex.get(selectedPersona.name) ?? []}
           />

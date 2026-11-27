@@ -362,7 +362,7 @@ buildRecipeIndex(data, fusion, playerLevel: number | null): Map<string, Recipe[]
 
 ## Phase 3 — Describe the build
 
-### - [ ] Task 6: Edit the moveset — innate and inherited sources
+### - [x] Task 6: Edit the moveset — innate and inherited sources
 
 **Visible result:** the skill list becomes an editable moveset (up to 8 rows, prefilled with the persona's own skills). Each row has a source select offering only valid choices: "Innate" or a persona that learns the skill and can pass it to the target.
 
