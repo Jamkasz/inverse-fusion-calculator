@@ -14,7 +14,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "fetch": "node tools/fetch-reference.mjs",
-    "data": "npm run fetch && node tools/build-data.mjs"
+    "data": "npm run fetch && node tools/build-data.mjs",
+    "golden": "node tools/build-golden.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",

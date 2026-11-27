@@ -325,7 +325,7 @@ Rules for every task:
 - with `allowRare: false`, `fuse('Regent', <any non-rare>) === null`.
 - UI: choosing Barong and Rangda shows Shiva; a null result shows the "cannot be fused" text.
 
-### - [ ] Task 4: Golden parity with the reference (test-only)
+### - [x] Task 4: Golden parity with the reference (test-only)
 
 **Visible result:** none — this is the one task with no visible change. It proves Task 3's panel gives the same answer as the reference site for every pair.
 
