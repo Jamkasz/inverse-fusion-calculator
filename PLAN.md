@@ -424,7 +424,7 @@ sourceOptions(data, target: string, skill: string): SkillSource[]
 
 **Tests:** `sourceOptions` includes `card` for `Zio` and not for a unique skill or a skill with no card source; a skill the target cannot inherit but that has a card offers `card`; a row set to `card` for `Zio` shows "Electric chair: Agathion" and for `Mazio` shows "Electric chair during fusion alarm: Agathion"; a skill with only a negotiation source shows only that group; the Network Fusion hint appears for a skill with that note.
 
-### - [ ] Task 8: "Already has it" source, validation and the inheritance counter
+### - [x] Task 8: "Already has it" source, validation and the inheritance counter
 
 **Visible result:** rows gain the option "A persona I own already has it (e.g. Network Fusion)…"; invalid builds show inline errors; a counter shows how many skills are set to be inherited against the target's limit.
 

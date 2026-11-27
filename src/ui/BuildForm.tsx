@@ -1,7 +1,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { GameData, Persona } from '../data/types'
-import { sourceOptions } from '../engine/build'
-import type { Build, SkillSource } from '../engine/build'
+import {
+  inheritedCapacity,
+  sourceOptions,
+  validateBuild,
+} from '../engine/build'
+import type { Build, BuildError, SkillSource } from '../engine/build'
+import type { Recipe } from '../engine/recipes'
 import { MAX_SKILLS } from '../engine/rules'
 import SkillRow from './SkillRow'
 import type { MovesetRow } from './SkillRow'
@@ -9,6 +14,7 @@ import type { MovesetRow } from './SkillRow'
 type BuildFormProps = {
   persona: Persona
   data: GameData
+  recipes: Map<string, Recipe[]>
   onChange: (build: Build) => void
 }
 
@@ -27,11 +33,22 @@ function defaultSource(
   target: Persona,
   skill: string,
 ): SkillSource {
-  if (skill === '' || skill in target.skills) return { kind: 'innate' }
-  return sourceOptions(data, target.name, skill)[0] ?? { kind: 'innate' }
+  if (skill === '') return { kind: 'innate' }
+
+  const isKnownSkill = data.skills.some((entry) => entry.name === skill)
+  if (isKnownSkill && Object.hasOwn(target.skills, skill)) {
+    return { kind: 'innate' }
+  }
+
+  return sourceOptions(data, target.name, skill)[0] ?? { kind: 'held', persona: '' }
 }
 
-export default function BuildForm({ persona, data, onChange }: BuildFormProps) {
+export default function BuildForm({
+  persona,
+  data,
+  recipes,
+  onChange,
+}: BuildFormProps) {
   const datalistId = useId()
   const idCounter = useRef(0)
   const makeId = () => {
@@ -133,6 +150,31 @@ export default function BuildForm({ persona, data, onChange }: BuildFormProps) {
     })
   }
 
+  const filledRows = rows.filter((row) => row.skill !== '')
+  const build: Build = {
+    target: persona.name,
+    skills: filledRows.map((row) => ({ name: row.skill, source: row.source })),
+    trait: null,
+  }
+  const errors = validateBuild(data, recipes, build)
+
+  const rowErrors = new Map<number, BuildError[]>()
+  for (const error of errors) {
+    if (error.row === undefined) continue
+    const uiRow = filledRows[error.row]
+    if (!uiRow) continue
+    const list = rowErrors.get(uiRow.id) ?? []
+    list.push(error)
+    rowErrors.set(uiRow.id, list)
+  }
+  const formErrors = errors.filter((error) => error.row === undefined)
+
+  const inheritedCount = build.skills.filter(
+    (row) => row.source.kind === 'persona' || row.source.kind === 'held',
+  ).length
+  const capacity = inheritedCapacity(data, recipes, persona.name)
+  const overLimit = inheritedCount > capacity
+
   return (
     <section className="build-form">
       <h3 className="build-form-heading">Moveset</h3>
@@ -143,6 +185,20 @@ export default function BuildForm({ persona, data, onChange }: BuildFormProps) {
         ))}
       </datalist>
 
+      {formErrors.length > 0 ? (
+        <div className="build-errors" data-testid="build-form-errors">
+          {formErrors.map((error, index) => (
+            <p
+              key={`${error.code}-${index}`}
+              className="build-error"
+              role="alert"
+            >
+              {error.message}
+            </p>
+          ))}
+        </div>
+      ) : null}
+
       <ul className="skill-list">
         {rows.map((row, index) => (
           <SkillRow
@@ -152,12 +208,21 @@ export default function BuildForm({ persona, data, onChange }: BuildFormProps) {
             persona={persona}
             data={data}
             datalistId={datalistId}
+            errors={rowErrors.get(row.id) ?? []}
             onSkillChange={handleSkillChange}
             onSourceChange={handleSourceChange}
             onRemove={handleRemove}
           />
         ))}
       </ul>
+
+      <p
+        className={`inheritance-counter${overLimit ? ' over-limit' : ''}`}
+        data-testid="inherited-counter"
+        aria-live="polite"
+      >
+        Inherited: {inheritedCount} of {capacity}
+      </p>
 
       <button
         type="button"

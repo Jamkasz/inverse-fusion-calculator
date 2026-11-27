@@ -488,6 +488,52 @@ body {
   color: #b3261e;
 }
 
+.held-persona-row {
+  margin-top: 0.55rem;
+}
+
+.held-persona-input {
+  width: 100%;
+  max-width: 18rem;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: inherit;
+  background-color: transparent;
+  border: 1px solid rgba(128, 128, 128, 0.55);
+  border-radius: 0.4rem;
+}
+
+.held-persona-input:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.build-errors {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 0.85rem;
+}
+
+.build-error {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #b3261e;
+}
+
+.inheritance-counter {
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+.inheritance-counter.over-limit {
+  font-weight: 600;
+  color: #b3261e;
+  opacity: 1;
+}
+
 .card-sources {
   display: grid;
   gap: 0.15rem;
@@ -513,11 +559,14 @@ body {
   .skill-source:focus-visible,
   .skill-remove:focus-visible,
   .add-skill:focus-visible,
-  .also-learns-chip:focus-visible {
+  .also-learns-chip:focus-visible,
+  .held-persona-input:focus-visible {
     outline-color: #ff9a9a;
   }
 
-  .source-reason {
+  .source-reason,
+  .build-error,
+  .inheritance-counter.over-limit {
     color: #ff8a80;
   }
 }

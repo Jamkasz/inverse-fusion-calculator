@@ -52,6 +52,7 @@ export default function App() {
             key={selectedPersona.name}
             persona={selectedPersona}
             data={gameData}
+            recipes={recipeIndex}
             onChange={setBuild}
           />
           <RecipeList

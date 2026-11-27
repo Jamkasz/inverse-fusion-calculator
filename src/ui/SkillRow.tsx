@@ -1,8 +1,12 @@
+import { useId } from 'react'
 import type { GameData, Persona } from '../data/types'
 import { formatCost } from '../data/load'
 import { sourceOptions, sourceUnavailableReason } from '../engine/build'
-import type { SkillSource } from '../engine/build'
+import type { BuildError, SkillSource } from '../engine/build'
 import CardSourceList from './CardSourceList'
+
+const HELD_OPTION_LABEL =
+  'A persona I own already has it (e.g. Network Fusion)…'
 
 export type MovesetRow = {
   id: number
@@ -16,6 +20,7 @@ type SkillRowProps = {
   persona: Persona
   data: GameData
   datalistId: string
+  errors: BuildError[]
   onSkillChange: (id: number, skill: string) => void
   onSourceChange: (id: number, source: SkillSource) => void
   onRemove: (id: number) => void
@@ -30,7 +35,7 @@ function encodeSource(source: SkillSource): string {
     case 'persona':
       return `persona:${source.persona}`
     case 'held':
-      return `held:${source.persona}`
+      return 'held'
   }
 }
 
@@ -38,9 +43,7 @@ function decodeSource(value: string): SkillSource {
   if (value.startsWith('persona:')) {
     return { kind: 'persona', persona: value.slice('persona:'.length) }
   }
-  if (value.startsWith('held:')) {
-    return { kind: 'held', persona: value.slice('held:'.length) }
-  }
+  if (value === 'held') return { kind: 'held', persona: '' }
   if (value === 'card') return { kind: 'card' }
   return { kind: 'innate' }
 }
@@ -51,15 +54,20 @@ export default function SkillRow({
   persona,
   data,
   datalistId,
+  errors,
   onSkillChange,
   onSourceChange,
   onRemove,
 }: SkillRowProps) {
+  const heldDatalistId = useId()
   const skill =
     row.skill === ''
       ? undefined
       : data.skills.find((entry) => entry.name === row.skill)
-  const learnLevel = row.skill in persona.skills ? persona.skills[row.skill] : null
+  const learnLevel =
+    skill !== undefined && Object.hasOwn(persona.skills, row.skill)
+      ? persona.skills[row.skill]
+      : null
   const options =
     row.skill === '' ? [] : sourceOptions(data, persona.name, row.skill)
   const reason =
@@ -121,7 +129,9 @@ export default function SkillRow({
           <p className="source-reason" data-testid="source-reason">
             {reason}
           </p>
-        ) : options.length > 0 ? (
+        ) : null}
+
+        {row.skill !== '' ? (
           <select
             className="skill-source"
             aria-label={`Source for ${row.skill}`}
@@ -136,6 +146,7 @@ export default function SkillRow({
                 {sourceLabel(source)}
               </option>
             ))}
+            <option value="held">{HELD_OPTION_LABEL}</option>
           </select>
         ) : null}
 
@@ -148,6 +159,42 @@ export default function SkillRow({
           Remove
         </button>
       </div>
+
+      {skill && row.source.kind === 'held' ? (
+        <div className="held-persona-row">
+          <input
+            className="held-persona-input"
+            aria-label={`Owned persona for ${row.skill}`}
+            list={heldDatalistId}
+            value={row.source.persona}
+            placeholder="Persona name"
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(event) =>
+              onSourceChange(row.id, {
+                kind: 'held',
+                persona: event.target.value,
+              })
+            }
+          />
+          <datalist id={heldDatalistId}>
+            {data.personas.map((entry) => (
+              <option key={entry.name} value={entry.name} />
+            ))}
+          </datalist>
+        </div>
+      ) : null}
+
+      {errors.map((error, index) => (
+        <p
+          key={`${error.code}-${index}`}
+          className="build-error"
+          data-testid="build-error"
+          role="alert"
+        >
+          {error.message}
+        </p>
+      ))}
 
       {skill && row.source.kind === 'card' ? (
         <CardSourceList skill={skill} />

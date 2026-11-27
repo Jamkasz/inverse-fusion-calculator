@@ -12,8 +12,18 @@ import { formatCost, loadGameData } from '../../src/data/load'
 import type { GameData, Persona } from '../../src/data/types'
 import { sourceOptions } from '../../src/engine/build'
 import type { Build } from '../../src/engine/build'
+import { createFusion } from '../../src/engine/fusion'
+import { buildRecipeIndex } from '../../src/engine/recipes'
 
 const data = loadGameData({ ownedDlc: [] })
+const recipes = buildRecipeIndex(
+  data,
+  createFusion(data, { allowRare: false }),
+  null,
+)
+
+const HELD_OPTION_LABEL =
+  'A persona I own already has it (e.g. Network Fusion)…'
 
 function skillOf(name: string) {
   const found = data.skills.find((skill) => skill.name === name)
@@ -49,6 +59,11 @@ function datalistValues(): string[] {
   return Array.from(datalist.querySelectorAll('option')).map(
     (option) => option.value,
   )
+}
+
+function lastOptionLabel(select: HTMLSelectElement): string | null {
+  const options = Array.from(select.options)
+  return options.length > 0 ? options[options.length - 1].textContent : null
 }
 
 describe('BuildForm', () => {
@@ -106,7 +121,14 @@ describe('BuildForm', () => {
     )
     if (!yoshitsune) throw new Error('Missing Yoshitsune')
 
-    render(<BuildForm persona={yoshitsune} data={data} onChange={vi.fn()} />)
+    render(
+      <BuildForm
+        persona={yoshitsune}
+        data={data}
+        recipes={recipes}
+        onChange={vi.fn()}
+      />,
+    )
 
     expect(datalistValues()).toContain('Hassou Tobi')
 
@@ -147,7 +169,7 @@ describe('BuildForm', () => {
     ).toBeInTheDocument()
   })
 
-  it('explains a unique skill instead of offering a source', () => {
+  it('explains a unique skill and still offers the held option', () => {
     render(<App />)
     choosePersona('Agathion')
     changeSkill(1, 'Hassou Tobi')
@@ -156,18 +178,23 @@ describe('BuildForm', () => {
     expect(within(row).getByTestId('source-reason')).toHaveTextContent(
       'unique to Yoshitsune',
     )
-    expect(within(row).queryByTestId('skill-source')).not.toBeInTheDocument()
+    const select = within(row).getByTestId('skill-source') as HTMLSelectElement
+    expect(select).toHaveValue('held')
+    expect(lastOptionLabel(select)).toBe(HELD_OPTION_LABEL)
   })
 
-  it('explains an element the target cannot inherit', () => {
+  it('explains an element the target cannot inherit and still offers held', () => {
     render(<App />)
     choosePersona('Agathion')
     changeSkill(1, 'Vacuum Wave')
 
-    expect(rows()[0]).toBeDefined()
-    expect(screen.getByTestId('source-reason')).toHaveTextContent(
+    const row = rows()[0]
+    expect(within(row).getByTestId('source-reason')).toHaveTextContent(
       'Agathion cannot inherit Wind skills',
     )
+    const select = within(row).getByTestId('skill-source') as HTMLSelectElement
+    expect(select).toHaveValue('held')
+    expect(lastOptionLabel(select)).toBe(HELD_OPTION_LABEL)
   })
 
   it('offers Skill card for Zio and lists the normal electric chair source', () => {
@@ -245,7 +272,7 @@ describe('BuildForm', () => {
     expect(within(list).getAllByTestId('card-source-group')).toHaveLength(2)
   })
 
-  it('shows the reference acquisition note even when there is no source', () => {
+  it('shows the reference acquisition note even when only held is offered', () => {
     render(<App />)
     choosePersona('Agathion')
     changeSkill(1, 'Almighty Amp')
@@ -254,7 +281,9 @@ describe('BuildForm', () => {
     expect(within(row).getByTestId('source-reason')).toHaveTextContent(
       'No persona learns this skill',
     )
-    expect(within(row).queryByTestId('skill-source')).not.toBeInTheDocument()
+    const select = within(row).getByTestId('skill-source') as HTMLSelectElement
+    expect(select).toHaveValue('held')
+    expect(lastOptionLabel(select)).toBe(HELD_OPTION_LABEL)
     expect(within(row).getByTestId('acquisition-note')).toHaveTextContent(
       'Reference notes: Network Fusion',
     )
@@ -269,7 +298,9 @@ describe('BuildForm', () => {
     expect(within(row).getByTestId('source-reason')).toHaveTextContent(
       'No persona learns this skill',
     )
-    expect(within(row).queryByTestId('skill-source')).not.toBeInTheDocument()
+    const select = within(row).getByTestId('skill-source') as HTMLSelectElement
+    expect(select).toHaveValue('held')
+    expect(lastOptionLabel(select)).toBe(HELD_OPTION_LABEL)
     expect(within(row).getByTestId('acquisition-note')).toHaveTextContent(
       'Reference notes: Fusion Mutation',
     )
@@ -316,7 +347,12 @@ describe('BuildForm', () => {
     }
 
     render(
-      <BuildForm persona={synthetic} data={cloned} onChange={vi.fn()} />,
+      <BuildForm
+        persona={synthetic}
+        data={cloned}
+        recipes={recipes}
+        onChange={vi.fn()}
+      />,
     )
 
     expect(rows()).toHaveLength(8)
@@ -340,7 +376,14 @@ describe('BuildForm', () => {
     if (!agathion) throw new Error('Missing Agathion')
 
     const onChange = vi.fn()
-    render(<BuildForm persona={agathion} data={data} onChange={onChange} />)
+    render(
+      <BuildForm
+        persona={agathion}
+        data={data}
+        recipes={recipes}
+        onChange={onChange}
+      />,
+    )
 
     const nativeNames = ['Dia', 'Baisudi', 'Lunge', 'Rakukaja', 'Zio', 'Dodge Elec']
     const expected: Build = {
@@ -374,5 +417,133 @@ describe('BuildForm', () => {
     await waitFor(() => {
       expect(onChange).toHaveBeenLastCalledWith(expectedAfterEdit)
     })
+  })
+
+  it('turns the held option into a persona input and reports the held source', async () => {
+    const agathion = data.personas.find((persona) => persona.name === 'Agathion')
+    if (!agathion) throw new Error('Missing Agathion')
+
+    const onChange = vi.fn()
+    render(
+      <BuildForm
+        persona={agathion}
+        data={data}
+        recipes={recipes}
+        onChange={onChange}
+      />,
+    )
+
+    const row = rows()[4]
+    fireEvent.change(within(row).getByLabelText('Source for Zio'), {
+      target: { value: 'held' },
+    })
+
+    const input = within(row).getByLabelText('Owned persona for Zio')
+    fireEvent.change(input, { target: { value: 'Pixie' } })
+
+    await waitFor(() => {
+      const last = onChange.mock.calls.at(-1)?.[0] as Build | undefined
+      expect(last?.skills).toContainEqual({
+        name: 'Zio',
+        source: { kind: 'held', persona: 'Pixie' },
+      })
+    })
+  })
+
+  it('counts inherited rows against the target capacity', () => {
+    render(<App />)
+    choosePersona('Agathion')
+
+    fireEvent.change(screen.getByLabelText('Source for Zio'), {
+      target: { value: 'persona:Pixie' },
+    })
+
+    expect(screen.getByTestId('inherited-counter')).toHaveTextContent(
+      'Inherited: 1 of 4',
+    )
+  })
+
+  it('shows a row-level error for an invalid held skill', () => {
+    render(<App />)
+    choosePersona('Agathion')
+    changeSkill(1, 'Hassou Tobi')
+
+    expect(
+      within(rows()[0]).getByTestId('build-error'),
+    ).toHaveTextContent('Hassou Tobi is unique and cannot be inherited')
+  })
+
+  it('always ends the source select with the held option', () => {
+    render(<App />)
+    choosePersona('Agathion')
+
+    const select = within(rows()[0]).getByTestId(
+      'skill-source',
+    ) as HTMLSelectElement
+    expect(lastOptionLabel(select)).toBe(HELD_OPTION_LABEL)
+  })
+
+  it('labels the held input distinctly from the target persona picker', () => {
+    render(<App />)
+    choosePersona('Agathion')
+
+    const row = rows()[4]
+    fireEvent.change(within(row).getByLabelText('Source for Zio'), {
+      target: { value: 'held' },
+    })
+
+    expect(within(row).getByLabelText('Owned persona for Zio')).toBeInTheDocument()
+    expect(within(row).queryByLabelText('Persona')).not.toBeInTheDocument()
+  })
+
+  it('treats prototype names as unknown skills and keeps the held source', () => {
+    render(<App />)
+    choosePersona('Agathion')
+    changeSkill(1, 'constructor')
+
+    const row = rows()[0]
+    expect(within(row).getByTestId('build-error')).toHaveTextContent(
+      'Unknown skill: constructor',
+    )
+    const select = within(row).getByTestId('skill-source') as HTMLSelectElement
+    expect(select).toHaveValue('held')
+    expect(within(row).queryByTestId('skill-level')).not.toBeInTheDocument()
+    expect(within(row).queryByText(/\[native code\]/)).not.toBeInTheDocument()
+  })
+
+  it('treats treasure-demon extra trait names as unknown skills', () => {
+    render(<App />)
+    choosePersona('Crystal Skull')
+    changeSkill(1, 'Foul Stench')
+
+    const row = rows()[0]
+    expect(within(row).getByTestId('build-error')).toHaveTextContent(
+      'Unknown skill: Foul Stench',
+    )
+    const select = within(row).getByTestId('skill-source') as HTMLSelectElement
+    expect(select).toHaveValue('held')
+    expect(within(row).queryByTestId('skill-level')).not.toBeInTheDocument()
+  })
+
+  it('shows the held persona input only while the held source is selected', () => {
+    render(<App />)
+    choosePersona('Agathion')
+
+    const row = rows()[4]
+    expect(
+      within(row).queryByLabelText('Owned persona for Zio'),
+    ).not.toBeInTheDocument()
+
+    fireEvent.change(within(row).getByLabelText('Source for Zio'), {
+      target: { value: 'held' },
+    })
+    expect(within(row).getByLabelText('Owned persona for Zio')).toBeInTheDocument()
+
+    fireEvent.change(within(row).getByLabelText('Source for Zio'), {
+      target: { value: 'innate' },
+    })
+    expect(
+      within(row).queryByLabelText('Owned persona for Zio'),
+    ).not.toBeInTheDocument()
   })
 })
