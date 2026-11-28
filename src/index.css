@@ -509,6 +509,12 @@ body {
   outline-offset: 2px;
 }
 
+.held-reach {
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
 .build-errors {
   display: grid;
   gap: 0.35rem;

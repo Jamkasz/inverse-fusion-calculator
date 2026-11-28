@@ -14,6 +14,9 @@ import { sourceOptions } from '../../src/engine/build'
 import type { Build } from '../../src/engine/build'
 import { createFusion } from '../../src/engine/fusion'
 import { buildRecipeIndex } from '../../src/engine/recipes'
+import type { Recipe } from '../../src/engine/recipes'
+import { skillReach } from '../../src/engine/reach'
+import SkillRow from '../../src/ui/SkillRow'
 
 const data = loadGameData({ ownedDlc: [] })
 const recipes = buildRecipeIndex(
@@ -64,6 +67,12 @@ function datalistValues(): string[] {
 function lastOptionLabel(select: HTMLSelectElement): string | null {
   const options = Array.from(select.options)
   return options.length > 0 ? options[options.length - 1].textContent : null
+}
+
+function personaOptions(select: HTMLSelectElement): HTMLOptionElement[] {
+  return Array.from(select.options).filter((option) =>
+    option.value.startsWith('persona:'),
+  )
 }
 
 describe('BuildForm', () => {
@@ -156,8 +165,12 @@ describe('BuildForm', () => {
 
     expect(optionValues).not.toContain('innate')
     expect(optionLabels).not.toContain('Innate')
-    expect(optionLabels).toContain('Cybele (Lv 87)')
-    expect(optionLabels).toContain('Vohu Manah (Lv 82)')
+    expect(
+      optionLabels.some((label) => label?.startsWith('Cybele (Lv 87)')),
+    ).toBe(true)
+    expect(
+      optionLabels.some((label) => label?.startsWith('Vohu Manah (Lv 82)')),
+    ).toBe(true)
 
     const first = sourceOptions(data, 'Agathion', 'Absorb Bless')[0]
     expect(first.kind).toBe('persona')
@@ -545,5 +558,186 @@ describe('BuildForm', () => {
     expect(
       within(row).queryByLabelText('Owned persona for Zio'),
     ).not.toBeInTheDocument()
+  })
+
+  it('annotates a persona source with its fusion distance', () => {
+    render(<App />)
+    choosePersona('Agathion')
+
+    const select = screen.getByLabelText('Source for Zio') as HTMLSelectElement
+    const labels = Array.from(select.options).map((option) => option.textContent)
+
+    expect(labels).toContain('Pixie (base) · 1 fusion')
+  })
+
+  it('marks every persona source of an unreachable select as no route', () => {
+    render(<App />)
+    choosePersona('Flauros')
+    changeSkill(1, 'Mabufudyne')
+
+    const select = within(rows()[0]).getByTestId(
+      'skill-source',
+    ) as HTMLSelectElement
+    const personas = personaOptions(select)
+
+    expect(personas.length).toBeGreaterThan(0)
+    for (const option of personas) {
+      expect(option.textContent).toMatch(/ · no route$/)
+    }
+    expect(lastOptionLabel(select)).toBe(HELD_OPTION_LABEL)
+  })
+
+  it('lists reachable persona sources in ascending distance', () => {
+    render(<App />)
+    choosePersona('Abaddon')
+    changeSkill(1, 'Mabufudyne')
+
+    const select = within(rows()[0]).getByTestId(
+      'skill-source',
+    ) as HTMLSelectElement
+    const distances = personaOptions(select).map((option) => {
+      const source = option.value.slice('persona:'.length)
+      return skillReach(data, recipes, 'Mabufudyne', source).get('Abaddon')
+    })
+
+    const reachable = distances.filter(
+      (distance): distance is number => distance !== undefined,
+    )
+    const firstUnreachable = distances.indexOf(undefined)
+    if (firstUnreachable !== -1) {
+      expect(distances.slice(firstUnreachable).every((d) => d === undefined)).toBe(
+        true,
+      )
+    }
+
+    expect(reachable).toContain(1)
+    expect(reachable).toContain(2)
+    expect([...reachable].sort((a, b) => a - b)).toEqual(reachable)
+    expect(distances.indexOf(2)).toBeGreaterThan(distances.lastIndexOf(1))
+    expect(
+      personaOptions(select).some((option) =>
+        option.textContent?.endsWith(' · 2 fusions'),
+      ),
+    ).toBe(true)
+  })
+
+  it('annotates a held persona with the same fusion distance', async () => {
+    render(<App />)
+    choosePersona('Agathion')
+    changeSkill(1, 'Agi')
+
+    const row = rows()[0]
+    fireEvent.change(within(row).getByLabelText('Source for Agi'), {
+      target: { value: 'held' },
+    })
+    fireEvent.change(within(row).getByLabelText('Owned persona for Agi'), {
+      target: { value: 'Pixie' },
+    })
+
+    await waitFor(() => {
+      expect(within(row).getByTestId('held-reach')).toHaveTextContent(
+        '· 1 fusion',
+      )
+    })
+  })
+
+  it('does not annotate an unknown or target held persona', () => {
+    render(<App />)
+    choosePersona('Agathion')
+    changeSkill(1, 'Agi')
+
+    const row = rows()[0]
+    fireEvent.change(within(row).getByLabelText('Source for Agi'), {
+      target: { value: 'held' },
+    })
+    const input = within(row).getByLabelText('Owned persona for Agi')
+
+    fireEvent.change(input, { target: { value: 'Pix' } })
+    expect(within(row).queryByTestId('held-reach')).not.toBeInTheDocument()
+
+    fireEvent.change(input, { target: { value: 'Agathion' } })
+    expect(within(row).queryByTestId('held-reach')).not.toBeInTheDocument()
+  })
+
+  // Use synthetic data to pin the mixed reachable/unreachable ordering rule
+  // directly, independent of whether the pinned data happens to contain such a
+  // select.
+  it('places reachable persona sources before unreachable ones in a mixed list', () => {
+    const base = data.personas.find((persona) => persona.name === 'Pixie')
+    if (!base) throw new Error('Missing Pixie')
+    const pixie: Persona = base
+
+    function persona(name: string, skills: Record<string, number>): Persona {
+      return {
+        ...pixie,
+        name,
+        skills,
+        trait: 'Test Trait',
+        inherits: 'Almighty',
+        special: false,
+        rare: false,
+        dlc: false,
+      }
+    }
+
+    const targetPersona = persona('Test Target', {})
+    const reachOne = persona('Reach One', { 'Test Skill': 0 })
+    const reachTwo = persona('Reach Two', { 'Test Skill': 0 })
+    const filler = persona('Filler', {})
+
+    const testSkill = {
+      name: 'Test Skill',
+      element: 'almighty',
+      effect: 'Synthetic skill',
+      cost: null,
+      unique: false,
+      personas: {},
+      cardSources: { chair: [], chairAlarm: [], negotiation: [] },
+      acquisitionNote: null,
+    }
+    const syntheticData: GameData = {
+      ...data,
+      personas: [targetPersona, reachOne, reachTwo, filler],
+      skills: [testSkill],
+      traits: [],
+    }
+    const syntheticRecipes = new Map<string, Recipe[]>([
+      [
+        'Test Target',
+        [{ result: 'Test Target', ingredients: ['Reach One', 'Filler'], cost: 0 }],
+      ],
+      ['Reach One', []],
+      ['Reach Two', []],
+      ['Filler', []],
+    ])
+
+    render(
+      <SkillRow
+        position={1}
+        row={{
+          id: 1,
+          skill: 'Test Skill',
+          source: { kind: 'persona', persona: 'Reach One' },
+        }}
+        persona={targetPersona}
+        data={syntheticData}
+        datalistId="test-skills"
+        errors={[]}
+        reachFor={(skill, source) =>
+          skillReach(syntheticData, syntheticRecipes, skill, source)
+        }
+        onSkillChange={vi.fn()}
+        onSourceChange={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    )
+
+    const select = screen.getByTestId('skill-source') as HTMLSelectElement
+    const labels = personaOptions(select).map((option) => option.textContent)
+
+    expect(labels).toEqual([
+      'Reach One (base) · 1 fusion',
+      'Reach Two (base) · no route',
+    ])
   })
 })

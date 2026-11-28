@@ -21,6 +21,7 @@ type SkillRowProps = {
   data: GameData
   datalistId: string
   errors: BuildError[]
+  reachFor: (skill: string, source: string) => Map<string, number>
   onSkillChange: (id: number, skill: string) => void
   onSourceChange: (id: number, source: SkillSource) => void
   onRemove: (id: number) => void
@@ -55,6 +56,7 @@ export default function SkillRow({
   data,
   datalistId,
   errors,
+  reachFor,
   onSkillChange,
   onSourceChange,
   onRemove,
@@ -75,6 +77,40 @@ export default function SkillRow({
       ? sourceUnavailableReason(data, persona.name, row.skill)
       : null
 
+  function reachDistance(sourcePersona: string): number | undefined {
+    return reachFor(row.skill, sourcePersona).get(persona.name)
+  }
+
+  function distanceSuffix(distance: number | undefined): string {
+    if (distance === undefined) return ' · no route'
+    return distance === 1 ? ' · 1 fusion' : ` · ${distance} fusions`
+  }
+
+  // Keep innate/card in their authored order, sort only the persona options by
+  // reach, and leave the held sentinel last. The original index is the stable
+  // tie-break; engine sourceOptions order is never mutated.
+  const nonPersonaOptions = options.filter(
+    (source) => source.kind !== 'persona',
+  )
+  const orderedPersonaOptions = options
+    .map((source, index) => ({ source, index }))
+    .filter(
+      (
+        entry,
+      ): entry is { source: Extract<SkillSource, { kind: 'persona' }>; index: number } =>
+        entry.source.kind === 'persona',
+    )
+    .sort((a, b) => {
+      const distanceA = reachDistance(a.source.persona)
+      const distanceB = reachDistance(b.source.persona)
+      const reachA = distanceA === undefined ? Infinity : distanceA
+      const reachB = distanceB === undefined ? Infinity : distanceB
+      if (reachA !== reachB) return reachA - reachB
+      return a.index - b.index
+    })
+    .map((entry) => entry.source)
+  const orderedOptions = [...nonPersonaOptions, ...orderedPersonaOptions]
+
   function sourceLabel(source: SkillSource): string {
     if (source.kind === 'innate') return 'Innate'
     if (source.kind === 'card') return 'Skill card'
@@ -92,6 +128,26 @@ export default function SkillRow({
         : ''
     return `${source.persona}${suffix}`
   }
+
+  function optionLabel(source: SkillSource): string {
+    const label = sourceLabel(source)
+    if (source.kind !== 'persona') return label
+    return `${label}${distanceSuffix(reachDistance(source.persona))}`
+  }
+
+  const heldSourceName =
+    row.source.kind === 'held' ? row.source.persona : ''
+  const heldPersona =
+    heldSourceName !== '' &&
+    heldSourceName !== persona.name &&
+    data.personas.some((entry) => entry.name === heldSourceName)
+      ? heldSourceName
+      : null
+
+  const heldReach =
+    skill !== undefined && heldPersona !== null
+      ? distanceSuffix(reachFor(row.skill, heldPersona).get(persona.name))
+      : null
 
   return (
     <li className="skill-row" data-testid="skill-row">
@@ -141,9 +197,9 @@ export default function SkillRow({
               onSourceChange(row.id, decodeSource(event.target.value))
             }
           >
-            {options.map((source) => (
+            {orderedOptions.map((source) => (
               <option key={encodeSource(source)} value={encodeSource(source)}>
-                {sourceLabel(source)}
+                {optionLabel(source)}
               </option>
             ))}
             <option value="held">{HELD_OPTION_LABEL}</option>
@@ -182,6 +238,11 @@ export default function SkillRow({
               <option key={entry.name} value={entry.name} />
             ))}
           </datalist>
+          {heldReach !== null ? (
+            <span className="held-reach" data-testid="held-reach">
+              {heldReach}
+            </span>
+          ) : null}
         </div>
       ) : null}
 

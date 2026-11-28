@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { GameData, Persona } from '../data/types'
 import {
   inheritedCapacity,
@@ -6,6 +6,7 @@ import {
   validateBuild,
 } from '../engine/build'
 import type { Build, BuildError, SkillSource } from '../engine/build'
+import { skillReach } from '../engine/reach'
 import type { Recipe } from '../engine/recipes'
 import { MAX_SKILLS } from '../engine/rules'
 import SkillRow from './SkillRow'
@@ -70,6 +71,24 @@ export default function BuildForm({
   const allNative = useMemo(
     () => nativeSkills(persona, data),
     [persona, data],
+  )
+
+  // Reach is expensive, so compute it at most once per (skill, source) and
+  // share the result across every row. Both keys reset when the data changes.
+  const reachCache = useMemo(
+    () => new Map<string, Map<string, number>>(),
+    [data, recipes],
+  )
+  const reachFor = useCallback(
+    (skill: string, source: string): Map<string, number> => {
+      const key = `${skill}\u0000${source}`
+      const cached = reachCache.get(key)
+      if (cached) return cached
+      const computed = skillReach(data, recipes, skill, source)
+      reachCache.set(key, computed)
+      return computed
+    },
+    [data, recipes, reachCache],
   )
   const extras = allNative.slice(MAX_SKILLS)
   const availableExtras = extras.filter(
@@ -209,6 +228,7 @@ export default function BuildForm({
             data={data}
             datalistId={datalistId}
             errors={rowErrors.get(row.id) ?? []}
+            reachFor={reachFor}
             onSkillChange={handleSkillChange}
             onSourceChange={handleSourceChange}
             onRemove={handleRemove}

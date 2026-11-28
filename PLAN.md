@@ -455,7 +455,7 @@ sourceOptions(data, target: string, skill: string): SkillSource[]
 
 **Tests:** one engine test per error code with a minimal failing build; one valid build returning `[]`; a `held` source on a persona that does not learn the skill is valid; UI: choosing the "already has it" option and a persona yields a `held` source in `onChange`; an invalid row shows its error text; the counter shows `Inherited: 1 of C` after one row is switched to a persona source.
 
-### - [ ] Task 9: Show how far each source is from the target
+### - [x] Task 9: Show how far each source is from the target
 
 **Visible result:** every persona entry in a source select is annotated with the minimum number of fusions needed to carry that skill to the target (`Agathion (Lv 7) · 1 fusion`), unreachable ones are marked `· no route` and sorted last; a `held` persona shows the same annotation once chosen.
 
