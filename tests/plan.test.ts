@@ -233,6 +233,47 @@ describe('toSteps', () => {
     ])
   })
 
+  it('levels an intermediate fused node before its parent fusion', () => {
+    const parvati: Node = {
+      ...fuseNode('Parvati', [leafNode('Ananta'), leafNode('Barong')], []),
+      learns: [{ skill: 'Psiodyne', level: 5 }],
+    }
+    const root = fuseNode('Abaddon', [parvati, leafNode('Throne')], [])
+    const steps = toSteps(data, build('Abaddon', []), {
+      root,
+      fusions: 2,
+      cost: 0,
+    })
+
+    expect(steps.map(stepLabel)).toEqual([
+      'obtain Ananta',
+      'obtain Barong',
+      'fuse Parvati',
+      'level Parvati',
+      'obtain Throne',
+      'fuse Abaddon',
+    ])
+
+    const fuseIndex = steps.findIndex(
+      (step) => step.kind === 'fuse' && step.result === 'Parvati',
+    )
+    const levelIndex = steps.findIndex(
+      (step) => step.kind === 'level' && step.persona === 'Parvati',
+    )
+    const rootFuseIndex = steps.findIndex(
+      (step) => step.kind === 'fuse' && step.result === 'Abaddon',
+    )
+    expect(levelIndex).toBe(fuseIndex + 1)
+    expect(levelIndex).toBeLessThan(rootFuseIndex)
+
+    const level = steps[levelIndex]
+    expect(level.kind).toBe('level')
+    if (level.kind === 'level') {
+      expect(level.levelTo).toBe(5)
+      expect(level.learns).toEqual(['Psiodyne'])
+    }
+  })
+
   it('places card steps after every fusion', () => {
     const source = build('Agathion', [
       persona('Patra', 'Pixie'),

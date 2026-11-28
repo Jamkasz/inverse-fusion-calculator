@@ -132,6 +132,16 @@ export function replay(
     const ingredients = recipe.ingredients
     const persona = personaByName.get(node.persona)
 
+    // A held skill belongs to a fixed owned leaf; a fused persona cannot
+    // already hold a skill it did not learn natively.
+    for (const learn of node.learns) {
+      if (learn.level === null) {
+        violations.push(
+          `Fused persona ${node.persona} cannot already hold ${learn.skill}`,
+        )
+      }
+    }
+
     if (!persona) {
       violations.push(`Unknown fused persona: ${node.persona}`)
     } else if (

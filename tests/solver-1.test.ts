@@ -16,7 +16,6 @@ import {
   DIRECT,
   HELD_DIRECT,
   TRAIT_DIRECT,
-  TWO_SOURCES_ONE_RECIPE,
   TWO_STEP,
   UNREACHABLE,
 } from './helpers/fixtures'
@@ -90,7 +89,7 @@ function expectUnsupported(source: Build, capability: string): void {
   throw new Error('Expected solve to throw UnsupportedBuildError')
 }
 
-describe('solve with zero or one inherited skill', () => {
+describe('solve with inherited skills', () => {
   it('returns one zero-fusion plan when only innate and card skills are needed', () => {
     const source = build('Agathion', [innate('Zio'), card('Abysmal Surge')])
     const plans = solve(data, settings, source)
@@ -196,17 +195,6 @@ describe('solve with zero or one inherited skill', () => {
       validateBuild(data, recipes, source).map((error) => error.code),
     ).toContain('NOT_INHERITABLE')
     expect(solve(data, settings, source)).toEqual([])
-  })
-
-  it('rejects several inherited skills', () => {
-    const fixture = TWO_SOURCES_ONE_RECIPE!
-    expectUnsupported(
-      build(fixture.target, [
-        persona(fixture.a.skill, fixture.a.source),
-        persona(fixture.b.skill, fixture.b.source),
-      ]),
-      'several inherited skills',
-    )
   })
 
   it('rejects an advanced-fusion target that inherits a skill', () => {

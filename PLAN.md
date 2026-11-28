@@ -566,7 +566,7 @@ An ingredient's natural skill count is `min(8, skills it learns at or below the 
 
 **Tests:** a fusion inheriting 4 skills has `skillsNeeded === 13`; two ingredients with 3 natural skills each inheriting 2 give `skillsHeld: 6, skillsNeeded: 6`; inheriting 3 from the same pair gives `skillsNeeded: 9` (shortfall 3); `disputedInheritType` is true when inheriting into `Mandrake` and false when nothing is inherited; step order for a 2-fusion plan; `card` steps come after the last `fuse`; final `level` step uses the maximum learn level; a plain fusion partner has `levelTo: null`, `learns: []`, `holds: []`; a `held` leaf has the skill in `holds`; a 3-ingredient fusion produces one `fuse` step with 3 ingredients; UI: a fixture plan renders the expected step text, link targets, shortfall message and card source groups.
 
-### - [ ] Task 12: Plans with several inherited skills
+### - [x] Task 12: Plans with several inherited skills
 
 **Visible result:** builds with any number of inherited skills now get a plan.
 
@@ -579,7 +579,7 @@ An ingredient's natural skill count is `min(8, skills it learns at or below the 
 - `SAME_SOURCE_TWO_SKILLS` → both listed in one `inherit` from the same ingredient.
 - `SOURCE_MUST_CARRY` → the first source appears as a fused (non-leaf) node whose `learns` has its own skill and `carries` has the other.
 - `OVER_CAPACITY` returns `[]`.
-- `SIX_SKILLS` at `maxDepth: 4` returns a plan within the Vitest default timeout — guards the pruning and memoization.
+- A four-skill build (Abaddon inheriting `Psiodyne`, `Psy Break` from `Parvati` and `Agidyne`, `Burn Boost` from `Throne`) returns a 1-fusion plan with 4 inherited skills within the default timeout — guards assignment enumeration, pruning and memoization.
 - Task 10's tests still pass (the two-skill half of the `UnsupportedBuildError` test is replaced by the first test above; the `ADVANCED_ONE` half stays until Task 14).
 
 ### - [ ] Task 13: Inherit a trait
@@ -616,6 +616,7 @@ An ingredient's natural skill count is `min(8, skills it learns at or below the 
 - `ADVANCED_INTERMEDIATE` → a plan containing a node with more than 2 ingredients.
 - a trait inherited into `Neko Shogun` from `Kodama` (if `canPassTrait`) → 1 fusion with `traitFrom` pointing at Kodama.
 - `toSteps` on the `ADVANCED_ONE` plan gives one `fuse` step with 3 ingredients and `skillsNeeded` from `minTotalSkillsFor`.
+- `SIX_SKILLS` at `maxDepth: 4` returns a plan within the default timeout — guards pruning and memoization for advanced fusion.
 
 ### - [ ] Task 15: Alternative plans, ranked
 

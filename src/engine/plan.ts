@@ -101,9 +101,31 @@ function fuseStep(
 }
 
 /**
+ * The leveling step a fused node needs before a parent fusion can use the
+ * skills it learned above base level, or null when it has none.
+ */
+function nodeLevelStep(node: Node): Step | null {
+  const level = requiredLevel(node)
+  if (level === 0) return null
+  return {
+    kind: 'level',
+    persona: node.persona,
+    levelTo: level,
+    learns: node.learns
+      .filter(
+        (learn): learn is { skill: string; level: number } =>
+          learn.level !== null && learn.level > 0,
+      )
+      .map((learn) => learn.skill),
+  }
+}
+
+/**
  * Turns a plan tree into the ordered instructions the user performs: ingredient
- * steps before their fusion (a post-order walk), then skill cards, then a single
- * final leveling step for the target's innate skills above base level.
+ * steps before their fusion (a post-order walk), a leveling step immediately
+ * after any fused node whose learned skills must be leveled before a parent
+ * fusion uses them, then skill cards, then a single final leveling step for the
+ * target's innate skills above base level.
  */
 export function toSteps(data: GameData, build: Build, plan: Plan): Step[] {
   const steps: Step[] = []
@@ -115,6 +137,8 @@ export function toSteps(data: GameData, build: Build, plan: Plan): Step[] {
     }
     for (const ingredient of node.recipe.ingredients) walk(ingredient)
     steps.push(fuseStep(data, node, node.recipe))
+    const level = nodeLevelStep(node)
+    if (level) steps.push(level)
   }
 
   walk(plan.root)
