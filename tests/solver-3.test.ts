@@ -9,7 +9,7 @@ import { createFusion } from '../src/engine/fusion'
 import { buildRecipeIndex } from '../src/engine/recipes'
 import { canPassTrait } from '../src/engine/rules'
 import type { Node, Plan } from '../src/engine/solver'
-import { UnsupportedBuildError, solve } from '../src/engine/solver'
+import { solve } from '../src/engine/solver'
 import { replay } from './helpers/replay'
 import { DIRECT, TRAIT_DIRECT } from './helpers/fixtures'
 
@@ -241,22 +241,6 @@ describe('solve with an inherited trait', () => {
     expectValid(plans[0], source)
   })
 
-  it('still rejects a real trait request on a special target', () => {
-    const source = build('Neko Shogun', [], {
-      name: 'Static Electricity',
-      from: 'Pixie',
-    })
-    try {
-      solve(data, settings, source)
-      throw new Error('Expected solve to throw UnsupportedBuildError')
-    } catch (error) {
-      expect(error).toBeInstanceOf(UnsupportedBuildError)
-      expect((error as UnsupportedBuildError).capability).toBe(
-        'advanced fusion',
-      )
-    }
-  })
-
   it('rejects a tampered trait chain during replay', () => {
     const fixture = TRAIT_DIRECT!
     const source = build(fixture.target, [], {
@@ -274,5 +258,55 @@ describe('solve with an inherited trait', () => {
     expect(noSource.root.recipe).not.toBeNull()
     noSource.root.recipe!.traitFrom = null
     expect(replay(data, settings, source, noSource).length).toBeGreaterThan(0)
+  })
+
+  it('rejects a descendant that carries a trait other than the requested one', () => {
+    // Satanael from Anubis routes Deathly Illness through Lucifer, so the
+    // intermediate Lucifer node carries the requested trait.
+    const source = build('Satanael', [], {
+      name: 'Deathly Illness',
+      from: 'Anubis',
+    })
+    const plan = solve(data, settings, source)[0]
+    expect(replay(data, settings, source, plan)).toEqual([])
+
+    const tampered = JSON.parse(JSON.stringify(plan)) as Plan
+    const carrier = allNodes(tampered).find(
+      (node) =>
+        node !== tampered.root &&
+        node.recipe !== null &&
+        node.carriesTrait === 'Deathly Illness',
+    )
+    expect(carrier).toBeDefined()
+    carrier!.carriesTrait = 'Rare Antibody'
+
+    expect(replay(data, settings, source, tampered)).toEqual(
+      expect.arrayContaining([
+        `Node ${carrier!.persona} carries trait Rare Antibody, but the build asked for Deathly Illness`,
+      ]),
+    )
+  })
+
+  it('requires the trait source to own the trait instead of carrying it', () => {
+    const fixture = TRAIT_DIRECT!
+    const source = build(fixture.target, [], {
+      name: fixture.trait,
+      from: fixture.source,
+    })
+    const plan = solve(data, settings, source)[0]
+    expect(replay(data, settings, source, plan)).toEqual([])
+
+    const tampered = JSON.parse(JSON.stringify(plan)) as Plan
+    const sourceLeaf = allNodes(tampered).find(
+      (node) => node.persona === fixture.source && node.recipe === null,
+    )
+    expect(sourceLeaf).toBeDefined()
+    sourceLeaf!.carriesTrait = fixture.trait
+
+    expect(replay(data, settings, source, tampered)).toEqual(
+      expect.arrayContaining([
+        `Trait ${fixture.trait} does not trace back to ${fixture.source}`,
+      ]),
+    )
   })
 })

@@ -9,10 +9,9 @@ import { canInherit } from '../src/engine/inheritance'
 import { buildRecipeIndex } from '../src/engine/recipes'
 import { skillReach } from '../src/engine/reach'
 import type { Node, Plan } from '../src/engine/solver'
-import { UnsupportedBuildError, solve } from '../src/engine/solver'
+import { solve } from '../src/engine/solver'
 import { replay } from './helpers/replay'
 import {
-  ADVANCED_ONE,
   DIRECT,
   HELD_DIRECT,
   TWO_STEP,
@@ -72,20 +71,6 @@ function descendants(node: Node): Node[] {
     child,
     ...descendants(child),
   ])
-}
-
-function expectUnsupported(source: Build, capability: string): void {
-  try {
-    solve(data, settings, source)
-  } catch (error) {
-    expect(error).toBeInstanceOf(UnsupportedBuildError)
-    expect((error as UnsupportedBuildError).capability).toBe(capability)
-    expect((error as Error).message).toBe(
-      `This build needs ${capability}, which is not supported yet`,
-    )
-    return
-  }
-  throw new Error('Expected solve to throw UnsupportedBuildError')
 }
 
 describe('solve with inherited skills', () => {
@@ -196,12 +181,7 @@ describe('solve with inherited skills', () => {
     expect(solve(data, settings, source)).toEqual([])
   })
 
-  it('rejects an advanced-fusion target that inherits a skill', () => {
-    const fixture = ADVANCED_ONE!
-    expectUnsupported(fixtureBuild(fixture), 'advanced fusion')
-  })
-
-  it('rejects any inherited skill on a special target, even with no route', () => {
+  it('returns no plan for an unreachable skill on a special target', () => {
     // Flauros is special, and King Frost has no route to it for Mabufudyne.
     const fixture = UNREACHABLE!
     const source = fixtureBuild(fixture)
@@ -215,7 +195,7 @@ describe('solve with inherited skills', () => {
         fixture.target,
       ),
     ).toBe(false)
-    expectUnsupported(source, 'advanced fusion')
+    expect(solve(data, settings, source)).toEqual([])
   })
 
   it('returns no plan for a non-special target with a genuinely unreachable skill', () => {
@@ -336,5 +316,59 @@ describe('replay', () => {
     expect(
       replay(data, settings, source, circular).length,
     ).toBeGreaterThan(0)
+  })
+
+  it('flags a leaf that repeats an ancestor', () => {
+    const source = build('Cerberus', [])
+    const shiki: Node = {
+      persona: 'Shiki-Ouji',
+      carries: [],
+      learns: [],
+      carriesTrait: null,
+      recipe: null,
+    }
+    const repeatedLeaf: Node = {
+      persona: 'Ara Mitama',
+      carries: [],
+      learns: [],
+      carriesTrait: null,
+      recipe: null,
+    }
+    const inner: Node = {
+      persona: 'Ara Mitama',
+      carries: [],
+      learns: [],
+      carriesTrait: null,
+      recipe: {
+        ingredients: [shiki, repeatedLeaf],
+        inherit: [],
+        traitFrom: null,
+      },
+    }
+    const partner: Node = {
+      persona: 'Chi You',
+      carries: [],
+      learns: [],
+      carriesTrait: null,
+      recipe: null,
+    }
+    const root: Node = {
+      persona: 'Cerberus',
+      carries: [],
+      learns: [],
+      carriesTrait: null,
+      recipe: {
+        ingredients: [inner, partner],
+        inherit: [],
+        traitFrom: null,
+      },
+    }
+
+    const plan: Plan = { root, fusions: 2, cost: 0 }
+    expect(replay(data, settings, source, plan)).toEqual(
+      expect.arrayContaining([
+        'Circular plan: Ara Mitama is already an ancestor',
+      ]),
+    )
   })
 })

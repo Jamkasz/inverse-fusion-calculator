@@ -297,9 +297,21 @@ export function replay(
         `Descendant ${node.persona} repeats the root target ${build.target}`,
       )
     }
-    if (node.recipe !== null && ancestors.has(node.persona)) {
+    if (ancestors.has(node.persona)) {
       violations.push(
         `Circular plan: ${node.persona} is already an ancestor`,
+      )
+    }
+
+    // A build that requests a trait may only route that exact trait; a node
+    // carrying anything else would silently change the requested result.
+    if (
+      build.trait !== null &&
+      node.carriesTrait !== null &&
+      node.carriesTrait !== build.trait.name
+    ) {
+      violations.push(
+        `Node ${node.persona} carries trait ${node.carriesTrait}, but the build asked for ${build.trait.name}`,
       )
     }
 
@@ -370,7 +382,7 @@ export function replay(
   ): boolean {
     const persona = personaByName.get(node.persona)
     if (node.persona === expectedSource) {
-      return persona?.trait === name
+      return node.carriesTrait === null && persona?.trait === name
     }
     if (node.carriesTrait !== name) return false
 

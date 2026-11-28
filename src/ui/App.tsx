@@ -7,7 +7,7 @@ import { validateBuild } from '../engine/build'
 import { createFusion } from '../engine/fusion'
 import { buildRecipeIndex } from '../engine/recipes'
 import type { Plan } from '../engine/solver'
-import { UnsupportedBuildError, solve } from '../engine/solver'
+import { solve } from '../engine/solver'
 import { toSteps } from '../engine/plan'
 import TargetPicker from './TargetPicker'
 import PersonaSummary from './PersonaSummary'
@@ -25,14 +25,10 @@ export const REFERENCE_COMMIT_URL = `https://github.com/chinhodado/persona5_calc
 
 const gameData = loadGameData(DEFAULT_SETTINGS)
 
-type SolveResult =
-  | { kind: 'plans'; plans: Plan[] }
-  | { kind: 'unsupported'; message: string }
-
 export default function App() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null)
   const [build, setBuild] = useState<Build | null>(null)
-  const [solveResult, setSolveResult] = useState<SolveResult | null>(null)
+  const [plans, setPlans] = useState<Plan[] | null>(null)
 
   // Memoized on the module-level game data; Task 17 will add the editable
   // settings to the dependencies.
@@ -50,7 +46,7 @@ export default function App() {
   // Stable so BuildForm's onChange effect cannot loop on a fresh callback.
   const handleBuildChange = useCallback((next: Build) => {
     setBuild(next)
-    setSolveResult(null)
+    setPlans(null)
   }, [])
 
   // Clear the old build and plan immediately on a target change, before the
@@ -58,7 +54,7 @@ export default function App() {
   const handlePersonaSelect = useCallback((persona: Persona | null) => {
     setSelectedPersona(persona)
     setBuild(null)
-    setSolveResult(null)
+    setPlans(null)
   }, [])
 
   const validationErrors =
@@ -66,16 +62,7 @@ export default function App() {
 
   function handleSolve() {
     if (build === null || build.target !== selectedPersona?.name) return
-    try {
-      const plans = solve(gameData, DEFAULT_SETTINGS, build)
-      setSolveResult({ kind: 'plans', plans })
-    } catch (error) {
-      if (error instanceof UnsupportedBuildError) {
-        setSolveResult({ kind: 'unsupported', message: error.message })
-      } else {
-        throw error
-      }
-    }
+    setPlans(solve(gameData, DEFAULT_SETTINGS, build))
   }
 
   return (
@@ -106,24 +93,16 @@ export default function App() {
             >
               Solve
             </button>
-            {solveResult?.kind === 'unsupported' ? (
-              <p className="solve-error" role="alert">
-                {solveResult.message}
-              </p>
-            ) : null}
-            {solveResult?.kind === 'plans' &&
-            solveResult.plans.length > 0 &&
-            build !== null ? (
+            {plans !== null && plans.length > 0 && build !== null ? (
               <>
                 <PlanSteps
-                  steps={toSteps(gameData, build, solveResult.plans[0])}
+                  steps={toSteps(gameData, build, plans[0])}
                   data={gameData}
                 />
-                <PlanTree plan={solveResult.plans[0]} />
+                <PlanTree plan={plans[0]} />
               </>
             ) : null}
-            {solveResult?.kind === 'plans' &&
-            solveResult.plans.length === 0 ? (
+            {plans !== null && plans.length === 0 ? (
               <p className="solve-empty">
                 No plan found within {DEFAULT_SETTINGS.maxDepth} fusions
               </p>

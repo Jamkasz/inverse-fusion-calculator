@@ -602,7 +602,7 @@ An ingredient's natural skill count is `min(8, skills it learns at or below the 
 - no returned plan ever routes a trait through a DLC persona or a treasure demon (run with all DLC owned and `allowRare: true`).
 - UI: default is "Keep own"; for `Agathion` the default shows `Rare Antibody` and its effect text; changing the target resets the trait; a DLC-only trait is not listed; choosing a trait lists exactly the personas whose own trait it is and that can pass it; the fuse step shows "Trait: take <persona>'s <trait>".
 
-### - [ ] Task 14: Advanced (multi-ingredient) fusion in plans
+### - [x] Task 14: Advanced (multi-ingredient) fusion in plans
 
 **Visible result:** advanced-fusion personas can be targets or intermediate steps of a plan that inherits skills or a trait; their fusion step lists all ingredients.
 

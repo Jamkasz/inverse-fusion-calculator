@@ -59,7 +59,7 @@ describe('PlanTree', () => {
     ).toBe(true)
   })
 
-  it('shows the unsupported advanced-fusion message', () => {
+  it('renders an advanced three-ingredient fusion plan', () => {
     render(<App />)
     choosePersona('Neko Shogun')
     changeSkill(1, 'Garu')
@@ -67,12 +67,24 @@ describe('PlanTree', () => {
 
     fireEvent.click(solveButton())
 
-    expect(
-      screen.getByText(
-        'This build needs advanced fusion, which is not supported yet',
-      ),
-    ).toBeInTheDocument()
-    expect(screen.queryByTestId('plan-tree')).not.toBeInTheDocument()
+    expect(screen.queryByText(/not supported yet/)).not.toBeInTheDocument()
+    expect(screen.getByTestId('plan-tree')).toBeInTheDocument()
+
+    const fusion = screen.getByTestId('plan-fusion')
+    expect(fusion).toHaveTextContent('Kodama')
+    expect(fusion).toHaveTextContent('Sudama')
+    expect(fusion).toHaveTextContent('Anzu')
+    expect(fusion).toHaveTextContent('Neko Shogun')
+
+    expect(screen.getByTestId('plan-inherit')).toHaveTextContent(
+      'Inherit: Garu from Kodama',
+    )
+
+    const fuseStep = screen
+      .getAllByTestId('plan-step')
+      .find((element) => element.getAttribute('data-kind') === 'fuse')
+    expect(fuseStep).toBeDefined()
+    expect(fuseStep).toHaveTextContent('Fuse Kodama + Sudama + Anzu → Neko Shogun')
   })
 
   it('shows no plan found within four fusions', () => {
