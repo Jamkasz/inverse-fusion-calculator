@@ -665,12 +665,65 @@ body {
   opacity: 0.85;
 }
 
+.plan-steps-section {
+  margin-top: 1.25rem;
+}
+
+.plan-steps-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.plan-steps {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.4rem;
+}
+
+.plan-step-main {
+  margin: 0;
+}
+
+.plan-step-fuse .plan-step-main {
+  font-weight: 600;
+}
+
+.plan-step-note {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+}
+
+.plan-step-shortfall,
+.plan-step-disputed {
+  font-weight: 600;
+  color: #b3261e;
+}
+
+.plan-persona-link {
+  font-weight: 600;
+}
+
+.plan-skill,
+.plan-trait {
+  font-weight: 500;
+}
+
+.plan-step .card-sources {
+  margin-top: 0.25rem;
+}
+
 @media (prefers-color-scheme: dark) {
   .solve-button:focus-visible {
     outline-color: #ff9a9a;
   }
 
   .solve-error {
+    color: #ff8a80;
+  }
+
+  .plan-step-shortfall,
+  .plan-step-disputed {
     color: #ff8a80;
   }
 }

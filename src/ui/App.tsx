@@ -8,9 +8,11 @@ import { createFusion } from '../engine/fusion'
 import { buildRecipeIndex } from '../engine/recipes'
 import type { Plan } from '../engine/solver'
 import { UnsupportedBuildError, solve } from '../engine/solver'
+import { toSteps } from '../engine/plan'
 import TargetPicker from './TargetPicker'
 import PersonaSummary from './PersonaSummary'
 import BuildForm from './BuildForm'
+import PlanSteps from './PlanSteps'
 import PlanTree from './PlanTree'
 import RecipeList from './RecipeList'
 import FusionCheck from './FusionCheck'
@@ -109,14 +111,22 @@ export default function App() {
                 {solveResult.message}
               </p>
             ) : null}
-            {solveResult?.kind === 'plans' ? (
-              solveResult.plans.length > 0 ? (
+            {solveResult?.kind === 'plans' &&
+            solveResult.plans.length > 0 &&
+            build !== null ? (
+              <>
+                <PlanSteps
+                  steps={toSteps(gameData, build, solveResult.plans[0])}
+                  data={gameData}
+                />
                 <PlanTree plan={solveResult.plans[0]} />
-              ) : (
-                <p className="solve-empty">
-                  No plan found within {DEFAULT_SETTINGS.maxDepth} fusions
-                </p>
-              )
+              </>
+            ) : null}
+            {solveResult?.kind === 'plans' &&
+            solveResult.plans.length === 0 ? (
+              <p className="solve-empty">
+                No plan found within {DEFAULT_SETTINGS.maxDepth} fusions
+              </p>
             ) : null}
           </section>
           <RecipeList

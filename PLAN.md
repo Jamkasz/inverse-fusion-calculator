@@ -538,7 +538,7 @@ Until the task that adds a capability, `solve` throws `UnsupportedBuildError` (e
 - a build with two inherited skills throws `UnsupportedBuildError`; so does `ADVANCED_ONE`.
 - UI: the tree for a 1-fusion plan shows both ingredients, the inherited skill and "Lv N" on the source leaf; the unsupported case shows the message; no plan found shows "No plan found within 4 fusions".
 
-### - [ ] Task 11: Step-by-step instructions
+### - [x] Task 11: Step-by-step instructions
 
 **Visible result:** above the tree, a numbered list of instructions in the order to perform them: obtain each starting persona (with level), each fusion (what to inherit, how many skills the ingredients must hold), skill cards to use (with where to get them), and final leveling.
 
