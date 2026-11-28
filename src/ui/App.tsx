@@ -89,7 +89,7 @@ export default function App() {
       <TargetPicker personas={gameData.personas} onSelect={handlePersonaSelect} />
       {selectedPersona ? (
         <>
-          <PersonaSummary persona={selectedPersona} data={gameData} />
+          <PersonaSummary persona={selectedPersona} />
           <BuildForm
             key={selectedPersona.name}
             persona={selectedPersona}

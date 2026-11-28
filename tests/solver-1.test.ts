@@ -15,7 +15,6 @@ import {
   ADVANCED_ONE,
   DIRECT,
   HELD_DIRECT,
-  TRAIT_DIRECT,
   TWO_STEP,
   UNREACHABLE,
 } from './helpers/fixtures'
@@ -217,17 +216,6 @@ describe('solve with inherited skills', () => {
       ),
     ).toBe(false)
     expectUnsupported(source, 'advanced fusion')
-  })
-
-  it('rejects a build that inherits a trait', () => {
-    const fixture = TRAIT_DIRECT!
-    expectUnsupported(
-      build(fixture.target, [], {
-        name: fixture.trait,
-        from: fixture.source,
-      }),
-      'trait inheritance',
-    )
   })
 
   it('returns no plan for a non-special target with a genuinely unreachable skill', () => {

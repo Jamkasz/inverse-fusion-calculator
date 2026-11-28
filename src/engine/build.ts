@@ -256,6 +256,7 @@ function sourceError(
 
 function traitError(
   data: GameData,
+  target: Persona,
   trait: NonNullable<Build['trait']>,
 ): BuildError | null {
   const persona = data.personas.find((entry) => entry.name === trait.from)
@@ -264,6 +265,12 @@ function traitError(
       code: 'UNKNOWN_SOURCE_PERSONA',
       message: `Unknown source persona: ${trait.from}`,
     }
+  }
+  // Explicit "keep own" names the target's own trait from the target itself, so
+  // it needs no trait passing. This deliberately bypasses canPassTrait so a DLC
+  // or treasure-demon target can still be left as it is.
+  if (trait.from === target.name && target.trait === trait.name) {
+    return null
   }
   if (!canPassTrait(persona)) {
     return {
@@ -335,12 +342,17 @@ export function validateBuild(
     if (error) errors.push(error)
   })
 
+  const keepsOwnTrait =
+    build.trait !== null &&
+    build.trait.from === target.name &&
+    target.trait === build.trait.name
+
   if (build.trait !== null) {
-    const error = traitError(data, build.trait)
+    const error = traitError(data, target, build.trait)
     if (error) errors.push(error)
   }
 
-  if (target.rare && (inherited > 0 || build.trait !== null)) {
+  if (target.rare && (inherited > 0 || (build.trait !== null && !keepsOwnTrait))) {
     errors.push({
       code: 'TARGET_NOT_FUSABLE',
       message: `${target.name} is a treasure demon and cannot be fused`,

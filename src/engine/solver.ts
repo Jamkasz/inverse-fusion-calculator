@@ -5,7 +5,8 @@ import { validateBuild } from './build'
 import { createFusion } from './fusion'
 import { inheritCapacity } from './inheritance'
 import { buildRecipeIndex } from './recipes'
-import { skillReach } from './reach'
+import { canPassTrait } from './rules'
+import { skillReach, traitReach } from './reach'
 
 export type Node = {
   persona: string
@@ -38,6 +39,12 @@ type Need = {
   kind: 'persona' | 'held'
 }
 
+/** One inherited trait, tagged with the persona whose own trait it is. */
+type TraitNeed = {
+  name: string
+  source: string
+}
+
 type Result = { node: Node; fusions: number; cost: number }
 
 /** Fewest fusions wins, then the lowest approximate cost. */
@@ -59,11 +66,6 @@ function makeNode(
   }
 }
 
-function unsupportedCapability(build: Build): string | null {
-  if (build.trait !== null) return 'trait inheritance'
-  return null
-}
-
 /** A stable order for needs, so memo keys and output do not depend on input. */
 function compareNeeds(a: Need, b: Need): number {
   if (a.skill !== b.skill) return a.skill < b.skill ? -1 : 1
@@ -73,12 +75,14 @@ function compareNeeds(a: Need, b: Need): number {
 }
 
 /**
- * Backward search for a build with any number of inherited skills and no
- * inherited trait, using two-ingredient recipes only (Task 12). Every inherited
- * skill is assigned to one of the two ingredients at each fusion; the search
- * enumerates those assignments, prunes with reach distances and inheritance
- * capacity, and memoizes. Returns at most one plan: the fewest fusions, then the
- * lowest approximate cost. Builds that need a later capability throw
+ * Backward search for a build with any number of inherited skills and an
+ * optional inherited trait, using two-ingredient recipes only (Task 13). Every
+ * inherited skill is assigned to one of the two ingredients at each fusion; a
+ * non-own trait is assigned to exactly one ingredient that can pass it. The
+ * search enumerates those assignments, prunes with reach distances and
+ * inheritance capacity, and memoizes. Returns at most one plan: the fewest
+ * fusions, then the lowest approximate cost. Advanced (multi-ingredient) fusion
+ * is still unsupported, so a special target with something to inherit throws
  * {@link UnsupportedBuildError}; builds that fail validation return an empty
  * list.
  */
@@ -99,16 +103,25 @@ export function solve(
   }
   needs.sort(compareNeeds)
 
-  // Cheap capability guards run before the expensive recipe index is built.
-  const unsupported = unsupportedCapability(build)
-  if (unsupported !== null) throw new UnsupportedBuildError(unsupported)
-
   const target = data.personas.find(
     (persona) => persona.name === build.target,
   )
-  // Task 12 still does not support advanced (multi-ingredient) fusion, so a
-  // special target with anything to inherit is unsupported regardless of route.
-  if (target?.special && needs.length > 0) {
+
+  // An explicit "keep own" request (the target's own trait, sourced from the
+  // target) is the same as no trait request at all.
+  const keepsOwnTrait =
+    build.trait !== null &&
+    build.trait.from === build.target &&
+    target?.trait === build.trait.name
+
+  const traitNeed: TraitNeed | null =
+    build.trait === null || keepsOwnTrait
+      ? null
+      : { name: build.trait.name, source: build.trait.from }
+
+  // The only remaining unsupported capability: advanced (multi-ingredient)
+  // fusion. A special target with anything to inherit still throws.
+  if (target?.special && (needs.length > 0 || traitNeed !== null)) {
     throw new UnsupportedBuildError('advanced fusion')
   }
 
@@ -127,9 +140,20 @@ export function solve(
     return reach
   }
 
+  // Minimum fusion distance for a source's own trait, kept once per source.
+  const traitReachCache = new Map<string, Map<string, number>>()
+  function traitReachFor(source: string): Map<string, number> {
+    let reach = traitReachCache.get(source)
+    if (!reach) {
+      reach = traitReach(data, recipes, source)
+      traitReachCache.set(source, reach)
+    }
+    return reach
+  }
+
   if (validateBuild(data, recipes, build).length > 0) return []
 
-  if (needs.length === 0) {
+  if (needs.length === 0 && traitNeed === null) {
     return [
       {
         root: makeNode(build.target, {}),
@@ -156,11 +180,16 @@ export function solve(
   function memoKey(
     persona: string,
     needs: Need[],
+    traitNeed: TraitNeed | null,
     depth: number,
     forbidden: ReadonlySet<string>,
   ): string {
     const ancestors = [...forbidden].sort().join('\u0001')
-    return `${persona}\u0000${needsKey(needs)}\u0000${depth}\u0000${ancestors}`
+    const trait =
+      traitNeed === null
+        ? '-'
+        : `${traitNeed.name}\u0000${traitNeed.source}`
+    return `${persona}\u0000${needsKey(needs)}\u0000${trait}\u0000${depth}\u0000${ancestors}`
   }
 
   /** Whether every assigned skill can reach `personaName` within `maxDepth`. */
@@ -183,15 +212,17 @@ export function solve(
    * Needs whose source is `personaName` are supplied natively, even when the
    * persona must also be fused to carry the remaining needs. Any other needs
    * are split between the two ingredients of a recipe, one assignment mask at a
-   * time.
+   * time. A non-own trait is assigned to exactly one ingredient that can pass
+   * it; the trait travels down only the selected branch.
    */
   function make(
     personaName: string,
     needs: Need[],
+    traitNeed: TraitNeed | null,
     depth: number,
     forbidden: ReadonlySet<string>,
   ): Result | null {
-    const key = memoKey(personaName, needs, depth, forbidden)
+    const key = memoKey(personaName, needs, traitNeed, depth, forbidden)
     if (memo.has(key)) return memo.get(key) ?? null
 
     const persona = personaByName.get(personaName)
@@ -207,13 +238,19 @@ export function solve(
       else rest.push(need)
     }
 
+    // A trait is satisfied for free when this persona is its source: a persona
+    // always keeps its own trait, whether it is a leaf or fused.
+    const traitSatisfied =
+      traitNeed === null || traitNeed.source === personaName
+
     const learns = native.map((need) => ({
       skill: need.skill,
       level: need.kind === 'held' ? null : persona.skills[need.skill],
     }))
 
-    // Everything this persona needs is supplied natively, so it can be a leaf.
-    if (rest.length === 0) {
+    // Everything this persona needs is supplied natively and the trait is its
+    // own, so it can be a leaf.
+    if (rest.length === 0 && traitSatisfied) {
       const result: Result = {
         node: makeNode(personaName, { learns }),
         fusions: 0,
@@ -225,7 +262,8 @@ export function solve(
 
     // A held source is a fixed, owned leaf: the persona already has the skill
     // without learning it. A newly fused persona cannot already hold such a
-    // skill, so if it must also carry anything else this branch is impossible.
+    // skill, so if it must also carry or inherit anything this branch is
+    // impossible.
     if (native.some((need) => need.kind === 'held')) {
       memo.set(key, null)
       return null
@@ -236,9 +274,16 @@ export function solve(
       return null
     }
 
-    // Prune on every skill that still has to travel to this persona.
+    // Prune on every skill and on the trait that still has to travel here.
     for (const need of rest) {
       const distance = reachFor(need).get(personaName)
+      if (distance === undefined || distance > depth) {
+        memo.set(key, null)
+        return null
+      }
+    }
+    if (traitNeed !== null && traitNeed.source !== personaName) {
+      const distance = traitReachFor(traitNeed.source).get(personaName)
       if (distance === undefined || distance > depth) {
         memo.set(key, null)
         return null
@@ -258,11 +303,29 @@ export function solve(
     childForbidden.add(personaName)
 
     for (const recipe of recipes.get(personaName) ?? []) {
-      // Task 12 still only follows two-ingredient recipes.
+      // Task 13 still only follows two-ingredient recipes.
       if (recipe.ingredients.length !== 2) continue
 
       const [left, right] = recipe.ingredients
       if (childForbidden.has(left) || childForbidden.has(right)) continue
+
+      // Which ingredient, if any, supplies the trait at this fusion.
+      const traitFroms: (0 | 1 | null)[] = []
+      if (traitNeed === null || traitNeed.source === personaName) {
+        traitFroms.push(null)
+      } else {
+        const sourceReach = traitReachFor(traitNeed.source)
+        for (const index of [0, 1] as const) {
+          const ingredient = index === 0 ? left : right
+          if (childForbidden.has(ingredient)) continue
+          const ingredientPersona = personaByName.get(ingredient)
+          if (!ingredientPersona || !canPassTrait(ingredientPersona)) continue
+          const distance = sourceReach.get(ingredient)
+          if (distance === undefined || distance > depth - 1) continue
+          traitFroms.push(index)
+        }
+      }
+      if (traitFroms.length === 0) continue
 
       // Assign each remaining skill to ingredient 0 or 1. The mask bit for a
       // need chooses the right ingredient; every split is a candidate.
@@ -279,36 +342,52 @@ export function solve(
         if (!canReachAll(assignedLeft, left, depth - 1)) continue
         if (!canReachAll(assignedRight, right, depth - 1)) continue
 
-        const leftResult = make(left, assignedLeft, depth - 1, childForbidden)
-        if (!leftResult) continue
-
-        const rightResult = make(
-          right,
-          assignedRight,
-          depth - 1,
-          childForbidden,
-        )
-        if (!rightResult) continue
-
         const inherit = rest.map((need, index) => ({
           skill: need.skill,
           from: (mask & (1 << index)) === 0 ? 0 : 1,
         }))
 
-        const result: Result = {
-          node: makeNode(personaName, {
-            carries: rest.map((need) => need.skill),
-            learns,
-            recipe: {
-              ingredients: [leftResult.node, rightResult.node],
-              inherit,
-              traitFrom: null,
-            },
-          }),
-          fusions: 1 + leftResult.fusions + rightResult.fusions,
-          cost: recipe.cost + leftResult.cost + rightResult.cost,
+        // The trait need follows only the ingredient chosen to carry it.
+        for (const traitFrom of traitFroms) {
+          const leftResult = make(
+            left,
+            assignedLeft,
+            traitFrom === 0 ? traitNeed : null,
+            depth - 1,
+            childForbidden,
+          )
+          if (!leftResult) continue
+
+          const rightResult = make(
+            right,
+            assignedRight,
+            traitFrom === 1 ? traitNeed : null,
+            depth - 1,
+            childForbidden,
+          )
+          if (!rightResult) continue
+
+          const carriesTrait =
+            traitNeed !== null && traitNeed.source !== personaName
+              ? traitNeed.name
+              : null
+
+          const result: Result = {
+            node: makeNode(personaName, {
+              carries: rest.map((need) => need.skill),
+              learns,
+              carriesTrait,
+              recipe: {
+                ingredients: [leftResult.node, rightResult.node],
+                inherit,
+                traitFrom,
+              },
+            }),
+            fusions: 1 + leftResult.fusions + rightResult.fusions,
+            cost: recipe.cost + leftResult.cost + rightResult.cost,
+          }
+          if (best === null || isCheaper(result, best)) best = result
         }
-        if (best === null || isCheaper(result, best)) best = result
       }
     }
 
@@ -321,6 +400,7 @@ export function solve(
     const result = make(
       build.target,
       needs,
+      traitNeed,
       depth,
       new Set([build.target]),
     )

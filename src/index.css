@@ -162,27 +162,48 @@ body {
   opacity: 0.9;
 }
 
-.persona-trait {
-  margin-top: 1.75rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(128, 128, 128, 0.35);
+.trait-picker {
+  margin: 0 0 0.85rem;
 }
 
-.persona-trait h3 {
-  margin: 0 0 0.4rem;
-  font-size: 1.05rem;
+.trait-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
 }
 
-.persona-trait p {
-  margin: 0;
-}
-
-.trait-name {
+.trait-picker-row label {
   font-weight: 600;
 }
 
+.trait-select,
+.trait-source {
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  border: 1px solid rgba(128, 128, 128, 0.55);
+  border-radius: 0.4rem;
+}
+
+.trait-select:focus-visible,
+.trait-source:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
 .trait-effect {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
   opacity: 0.9;
+}
+
+.trait-errors {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -190,7 +211,9 @@ body {
     color: #ff8a80;
   }
 
-  .target-picker input:focus-visible {
+  .target-picker input:focus-visible,
+  .trait-select:focus-visible,
+  .trait-source:focus-visible {
     outline-color: #ff9a9a;
   }
 }

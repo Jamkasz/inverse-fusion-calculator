@@ -11,6 +11,14 @@ import type { Recipe } from '../engine/recipes'
 import { MAX_SKILLS } from '../engine/rules'
 import SkillRow from './SkillRow'
 import type { MovesetRow } from './SkillRow'
+import TraitPicker from './TraitPicker'
+
+/** Row-less errors that belong next to the trait picker instead of the form. */
+const TRAIT_ERROR_CODES: ReadonlySet<string> = new Set([
+  'TRAIT_NOT_INHERITABLE',
+  'TRAIT_SOURCE_MISMATCH',
+  'UNKNOWN_SOURCE_PERSONA',
+])
 
 type BuildFormProps = {
   persona: Persona
@@ -67,6 +75,7 @@ export default function BuildForm({
         source: { kind: 'innate' as const },
       })),
   )
+  const [trait, setTrait] = useState<Build['trait']>(null)
 
   const allNative = useMemo(
     () => nativeSkills(persona, data),
@@ -120,9 +129,9 @@ export default function BuildForm({
       skills: rows
         .filter((row) => row.skill !== '')
         .map((row) => ({ name: row.skill, source: row.source })),
-      trait: null,
+      trait,
     })
-  }, [persona.name, rows, onChange])
+  }, [persona.name, rows, trait, onChange])
 
   function handleSkillChange(id: number, skill: string) {
     setRows((current) =>
@@ -173,7 +182,7 @@ export default function BuildForm({
   const build: Build = {
     target: persona.name,
     skills: filledRows.map((row) => ({ name: row.skill, source: row.source })),
-    trait: null,
+    trait,
   }
   const errors = validateBuild(data, recipes, build)
 
@@ -186,7 +195,12 @@ export default function BuildForm({
     list.push(error)
     rowErrors.set(uiRow.id, list)
   }
-  const formErrors = errors.filter((error) => error.row === undefined)
+  const traitErrors = errors.filter(
+    (error) => error.row === undefined && TRAIT_ERROR_CODES.has(error.code),
+  )
+  const formErrors = errors.filter(
+    (error) => error.row === undefined && !TRAIT_ERROR_CODES.has(error.code),
+  )
 
   const inheritedCount = build.skills.filter(
     (row) => row.source.kind === 'persona' || row.source.kind === 'held',
@@ -197,6 +211,15 @@ export default function BuildForm({
   return (
     <section className="build-form">
       <h3 className="build-form-heading">Moveset</h3>
+
+      <TraitPicker
+        persona={persona}
+        data={data}
+        recipes={recipes}
+        value={trait}
+        onChange={setTrait}
+        errors={traitErrors}
+      />
 
       <datalist id={datalistId}>
         {datalistOptions.map((name) => (

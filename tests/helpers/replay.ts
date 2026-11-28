@@ -227,7 +227,8 @@ export function replay(
       )
     }
 
-    // Traits: Task 10 plans use none, but a non-null trait must still trace.
+    // A carried trait must come from a valid, trait-passing ingredient that
+    // holds the same trait.
     if (node.carriesTrait === null) {
       if (recipe.traitFrom !== null) {
         violations.push(
@@ -357,12 +358,91 @@ export function replay(
     )
   }
 
+  /**
+   * Whether the trait `name` carried by `node` originates from a persona
+   * `expectedSource` that owns it. A node that is itself the source wins; a
+   * node carrying the trait follows its chosen `traitFrom` ingredient.
+   */
+  function traceTrait(
+    node: Node,
+    name: string,
+    expectedSource: string,
+  ): boolean {
+    const persona = personaByName.get(node.persona)
+    if (node.persona === expectedSource) {
+      return persona?.trait === name
+    }
+    if (node.carriesTrait !== name) return false
+
+    const recipe = node.recipe
+    if (!recipe || recipe.traitFrom === null) return false
+    if (
+      !Number.isInteger(recipe.traitFrom) ||
+      recipe.traitFrom < 0 ||
+      recipe.traitFrom >= recipe.ingredients.length
+    ) {
+      return false
+    }
+    return traceTrait(
+      recipe.ingredients[recipe.traitFrom],
+      name,
+      expectedSource,
+    )
+  }
+
+  /** Rejects any trait routing anywhere in a build that keeps its own trait. */
+  function rejectTraitRouting(node: Node): void {
+    if (node.carriesTrait !== null) {
+      violations.push(
+        `Node ${node.persona} carries trait ${node.carriesTrait}, but the build asked to keep its own`,
+      )
+    }
+    const recipe = node.recipe
+    if (!recipe) return
+    if (recipe.traitFrom !== null) {
+      violations.push(
+        `Fusion ${node.persona} routes a trait, but the build asked to keep its own`,
+      )
+    }
+    for (const ingredient of recipe.ingredients) {
+      rejectTraitRouting(ingredient)
+    }
+  }
+
   walk(plan.root, new Set(), true)
 
   if (plan.root.persona !== build.target) {
     violations.push(
       `Root persona is ${plan.root.persona}, expected ${build.target}`,
     )
+  }
+
+  if (build.trait === null) {
+    if (plan.root.carriesTrait !== null) {
+      violations.push(
+        `Root ${plan.root.persona} carries trait ${plan.root.carriesTrait}, but the build asked to keep its own`,
+      )
+    }
+    rejectTraitRouting(plan.root)
+  } else {
+    const targetPersona = personaByName.get(build.target)
+    const keepsOwn =
+      build.trait.from === build.target &&
+      targetPersona?.trait === build.trait.name &&
+      plan.root.carriesTrait === null
+    if (!keepsOwn) {
+      if (plan.root.carriesTrait !== build.trait.name) {
+        violations.push(
+          `Root ${plan.root.persona} carries trait ${plan.root.carriesTrait ?? 'nothing'}, expected ${build.trait.name}`,
+        )
+      } else if (
+        !traceTrait(plan.root, build.trait.name, build.trait.from)
+      ) {
+        violations.push(
+          `Trait ${build.trait.name} does not trace back to ${build.trait.from}`,
+        )
+      }
+    }
   }
 
   for (const row of build.skills) {

@@ -582,7 +582,7 @@ An ingredient's natural skill count is `min(8, skills it learns at or below the 
 - A four-skill build (Abaddon inheriting `Psiodyne`, `Psy Break` from `Parvati` and `Agidyne`, `Burn Boost` from `Throne`) returns a 1-fusion plan with 4 inherited skills within the default timeout — guards assignment enumeration, pruning and memoization.
 - Task 10's tests still pass (the two-skill half of the `UnsupportedBuildError` test is replaced by the first test above; the `ADVANCED_ONE` half stays until Task 14).
 
-### - [ ] Task 13: Inherit a trait
+### - [x] Task 13: Inherit a trait
 
 **Visible result:** a trait picker, defaulting to the persona's own trait; choosing another trait and its source persona makes the plan route that trait to the target, and fusion steps say whose trait to take.
 
