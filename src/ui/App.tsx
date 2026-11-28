@@ -1,13 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { DEFAULT_SETTINGS } from '../settings'
 import { loadGameData } from '../data/load'
 import type { Persona } from '../data/types'
 import type { Build } from '../engine/build'
+import { validateBuild } from '../engine/build'
 import { createFusion } from '../engine/fusion'
 import { buildRecipeIndex } from '../engine/recipes'
+import type { Plan } from '../engine/solver'
+import { UnsupportedBuildError, solve } from '../engine/solver'
 import TargetPicker from './TargetPicker'
 import PersonaSummary from './PersonaSummary'
 import BuildForm from './BuildForm'
+import PlanTree from './PlanTree'
 import RecipeList from './RecipeList'
 import FusionCheck from './FusionCheck'
 
@@ -19,9 +23,14 @@ export const REFERENCE_COMMIT_URL = `https://github.com/chinhodado/persona5_calc
 
 const gameData = loadGameData(DEFAULT_SETTINGS)
 
+type SolveResult =
+  | { kind: 'plans'; plans: Plan[] }
+  | { kind: 'unsupported'; message: string }
+
 export default function App() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null)
-  const [, setBuild] = useState<Build | null>(null)
+  const [build, setBuild] = useState<Build | null>(null)
+  const [solveResult, setSolveResult] = useState<SolveResult | null>(null)
 
   // Memoized on the module-level game data; Task 17 will add the editable
   // settings to the dependencies.
@@ -36,6 +45,37 @@ export default function App() {
     )
   }, [gameData])
 
+  // Stable so BuildForm's onChange effect cannot loop on a fresh callback.
+  const handleBuildChange = useCallback((next: Build) => {
+    setBuild(next)
+    setSolveResult(null)
+  }, [])
+
+  // Clear the old build and plan immediately on a target change, before the
+  // new BuildForm has a chance to report its build.
+  const handlePersonaSelect = useCallback((persona: Persona | null) => {
+    setSelectedPersona(persona)
+    setBuild(null)
+    setSolveResult(null)
+  }, [])
+
+  const validationErrors =
+    build === null ? [] : validateBuild(gameData, recipeIndex, build)
+
+  function handleSolve() {
+    if (build === null || build.target !== selectedPersona?.name) return
+    try {
+      const plans = solve(gameData, DEFAULT_SETTINGS, build)
+      setSolveResult({ kind: 'plans', plans })
+    } catch (error) {
+      if (error instanceof UnsupportedBuildError) {
+        setSolveResult({ kind: 'unsupported', message: error.message })
+      } else {
+        throw error
+      }
+    }
+  }
+
   return (
     <main className="app">
       <h1>Inverse Fusion Calculator</h1>
@@ -44,7 +84,7 @@ export default function App() {
         the skills and trait it should have.
       </p>
 
-      <TargetPicker personas={gameData.personas} onSelect={setSelectedPersona} />
+      <TargetPicker personas={gameData.personas} onSelect={handlePersonaSelect} />
       {selectedPersona ? (
         <>
           <PersonaSummary persona={selectedPersona} data={gameData} />
@@ -53,8 +93,32 @@ export default function App() {
             persona={selectedPersona}
             data={gameData}
             recipes={recipeIndex}
-            onChange={setBuild}
+            onChange={handleBuildChange}
           />
+          <section className="solve-panel">
+            <button
+              type="button"
+              className="solve-button"
+              onClick={handleSolve}
+              disabled={build === null || validationErrors.length > 0}
+            >
+              Solve
+            </button>
+            {solveResult?.kind === 'unsupported' ? (
+              <p className="solve-error" role="alert">
+                {solveResult.message}
+              </p>
+            ) : null}
+            {solveResult?.kind === 'plans' ? (
+              solveResult.plans.length > 0 ? (
+                <PlanTree plan={solveResult.plans[0]} />
+              ) : (
+                <p className="solve-empty">
+                  No plan found within {DEFAULT_SETTINGS.maxDepth} fusions
+                </p>
+              )
+            ) : null}
+          </section>
           <RecipeList
             key={`recipes-${selectedPersona.name}`}
             persona={selectedPersona}

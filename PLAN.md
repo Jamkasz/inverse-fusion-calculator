@@ -515,7 +515,7 @@ An ingredient that is the designated source of a skill provides it natively even
 
 Until the task that adds a capability, `solve` throws `UnsupportedBuildError` (exported from `solver.ts`) for builds needing it, and the UI shows "This build needs <capability>, which is not supported yet" instead of a plan.
 
-### - [ ] Task 10: First plans — one inherited skill
+### - [x] Task 10: First plans — one inherited skill
 
 **Visible result:** a Solve button. For a build with at most one inherited skill it shows a fusion tree (nested list: which personas to fuse, which skill is inherited at each step, which leaf must be at what level). Builds with more show the "not supported yet" message.
 

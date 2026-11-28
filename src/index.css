@@ -576,3 +576,101 @@ body {
     color: #ff8a80;
   }
 }
+
+.solve-panel {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(128, 128, 128, 0.35);
+}
+
+.solve-button {
+  padding: 0.4rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  background-color: rgba(128, 128, 128, 0.18);
+  border: 1px solid rgba(128, 128, 128, 0.55);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.solve-button:focus-visible {
+  outline: 2px solid #8a1c1c;
+  outline-offset: 2px;
+}
+
+.solve-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.solve-error {
+  margin: 0.75rem 0 0;
+  font-weight: 600;
+  color: #b3261e;
+}
+
+.solve-empty {
+  margin: 0.75rem 0 0;
+  font-weight: 600;
+}
+
+.plan-tree {
+  margin-top: 1.25rem;
+}
+
+.plan-tree-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.plan-nodes,
+.plan-children {
+  margin: 0;
+  list-style: none;
+}
+
+.plan-nodes {
+  padding-left: 0;
+}
+
+.plan-children {
+  margin-top: 0.45rem;
+  padding-left: 1.25rem;
+  border-left: 1px solid rgba(128, 128, 128, 0.35);
+}
+
+.plan-node {
+  margin: 0.4rem 0;
+}
+
+.plan-persona {
+  font-weight: 600;
+}
+
+.plan-fusion {
+  margin: 0;
+  font-weight: 600;
+}
+
+.plan-inherit {
+  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.plan-learn {
+  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+@media (prefers-color-scheme: dark) {
+  .solve-button:focus-visible {
+    outline-color: #ff9a9a;
+  }
+
+  .solve-error {
+    color: #ff8a80;
+  }
+}
